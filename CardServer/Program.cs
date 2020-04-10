@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace CardServer
 {
@@ -6,8 +7,15 @@ namespace CardServer
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-            Console.ReadKey();
+            Console.WriteLine("Starting Server");
+            Server.Server server = new Server.Server(8088);
+
+            while (true)
+            {
+                Console.WriteLine("Tick...");
+                server.Tick();
+                Thread.Sleep(100);
+            }
         }
     }
 }

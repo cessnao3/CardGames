@@ -25,6 +25,14 @@ namespace GameLibrary.Cards
         private static Random rng = new Random();
 
         /// <summary>
+        /// Property to return the number of cards in the deck
+        /// </summary>
+        public int Length
+        {
+            get { return cards.Length; }
+        }
+
+        /// <summary>
         /// Provides a deck with only the cards with the value/suit combinations
         /// provided
         /// </summary>

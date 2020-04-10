@@ -23,6 +23,7 @@ namespace GameLibrary.Cards
 
         public void AddCard(Card c)
         {
+            if (c == null) throw new ArgumentNullException("Card may not be null");
             cards.Add(c);
         }
 

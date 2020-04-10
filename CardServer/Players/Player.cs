@@ -9,11 +9,19 @@ namespace CardServer.Players
     /// </summary>
     public class Player
     {
-        public string name { get; private set; }
+        public string name { get; set; }
+        public string password_hash { get; set; }
 
-        public Player(string name)
+        private Player()
+        {
+            name = null;
+            password_hash = null;
+        }
+
+        public Player(string name, string password_hash)
         {
             this.name = name;
+            this.password_hash = password_hash;
         }
 
         public override bool Equals(object obj)
