@@ -30,6 +30,20 @@ namespace CardServer.Games
                     }
                 }
             }
+
+            pool = new List<Card>();
+
+            this.players = players;
+            scores = new Dictionary<Players.Player, List<int>>();
+            hands = new Dictionary<Players.Player, Hand>();
+            played_cards = new Dictionary<Players.Player, List<Card>>();
+
+            foreach (Players.Player p in this.players)
+            {
+                scores.Add(p, new List<int>());
+                hands.Add(p, new Hand());
+                played_cards.Add(p, new List<Card>());
+            }
         }
 
         public Players.Player CurrentPlayer()
