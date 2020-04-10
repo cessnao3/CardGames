@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.Json;
+using Newtonsoft.Json;
+using GameLibrary.Network;
 
 namespace CardServer.Server
 {
@@ -12,12 +13,14 @@ namespace CardServer.Server
     /// </summary>
     class Server
     {
-        List<TcpClient> clients;
+        class ServerTuple
+        {
+            public TcpClient client;
+            public NetworkStream stream;
+        };
+
+        Dictionary<Players.Player, ServerTuple> clients;
         TcpListener server_socket;
-
-        Dictionary<Players.Player, TcpClient> player_clients;
-
-        Dictionary<Players.Player, string> data_so_far;
 
         public Server(int port)
         {
@@ -26,7 +29,7 @@ namespace CardServer.Server
                 IPAddress.Any,
                 port);
             server_socket.Start();
-            clients = new List<TcpClient>();
+            clients = new Dictionary<Players.Player, ServerTuple>();
         }
 
         public void Tick()
@@ -35,21 +38,78 @@ namespace CardServer.Server
             {
                 TcpClient client = server_socket.AcceptTcpClient();
                 client.ReceiveTimeout = 1000;
-                clients.Add(client);
+
+                NetworkStream ns = client.GetStream();
+                ns.ReadTimeout = 1000;
+
+                string response_str = ReadMessage(ns);
+
+                GameConnectionMessage msg = (GameConnectionMessage)JsonConvert.DeserializeObject(response_str, typeof(GameConnectionMessage));
+
+                Players.Player p = null;
+
+                if (msg.action == GameConnectionMessage.ActionType.NewUser)
+                {
+                    if (!Players.PlayerDatabase.GetInstance().NewPlayer(name: msg.username, hash: msg.password_hash))
+                    {
+                        client.Close();
+                        continue;
+                    }
+                }
+
+                p = Players.PlayerDatabase.GetInstance().GetPlayerForName(
+                    username: msg.username,
+                    hash: msg.password_hash);
+
+                if (p != null)
+                {
+                    clients.Add(
+                        p,
+                        new ServerTuple()
+                        {
+                            client = client,
+                            stream = ns
+                        });
+                }
             }
 
-            foreach (TcpClient c in clients)
+            int i = 0;
+            while (i < clients.Count)
             {
-                if (!c.Connected)
+                ServerTuple c = clients[i];
+
+                if (!c.client.Connected)
                 {
-                    c.Close();
-                    clients.Remove(c);
+                    Close(c);
+                    continue;
                 }
-                else if (c.Available > 0)
+                else if (c.client.Available > 0)
                 {
-                    NetworkStream ns = c.GetStream();
+                    c.stream.ReadByte();
                 }
+
+                i += 1;
             }
+        }
+
+        void Close(ServerTuple st)
+        {
+            st.stream.Close();
+            st.client.Close();
+            clients.Remove(st);
+        }
+
+        public string ReadMessage(NetworkStream ns)
+        {
+            string s = string.Empty;
+            char c = '\0';
+            while (c != '}')
+            {
+                c = (char)ns.ReadByte();
+                s += c;
+            }
+
+            return s;
         }
     }
 }

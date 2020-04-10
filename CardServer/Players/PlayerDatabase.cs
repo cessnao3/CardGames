@@ -26,12 +26,6 @@ namespace CardServer.Players
         {
             if (db_fname != null)
             {
-                List<Player> player_list = new List<Player>();
-                foreach (Player p in database.Values)
-                {
-                    player_list.Add(p);
-                }
-
                 System.IO.StreamWriter json_writer = new System.IO.StreamWriter(db_fname);
                 json_writer.Write(JsonSerializer.Serialize(database, database.GetType()));
                 json_writer.Close();
@@ -42,9 +36,6 @@ namespace CardServer.Players
         {
             if (db_fname != null)
             {
-                List<Player> player_list = new List<Player>();
-                System.Xml.Serialization.XmlSerializer xml = new System.Xml.Serialization.XmlSerializer(player_list.GetType());
-
                 try
                 {
                     System.IO.StreamReader json_reader = new System.IO.StreamReader(db_fname);
@@ -65,11 +56,12 @@ namespace CardServer.Players
             return db;
         }
 
-        public Player GetPlayerForName(string username)
+        public Player GetPlayerForName(string username, string hash)
         {
             if (database.ContainsKey(username))
             {
-                return database[username];
+                Player p = database[username];
+                return (p.password_hash == hash) ? p : null;
             }
             else
             {

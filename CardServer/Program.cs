@@ -12,7 +12,7 @@ namespace CardServer
 
             while (true)
             {
-                Console.WriteLine("Tick...");
+                //Console.WriteLine("Tick...");
                 server.Tick();
                 Thread.Sleep(100);
             }

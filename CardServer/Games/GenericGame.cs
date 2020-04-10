@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using GameLibrary.Cards;
+using GameLibrary.Network;
 
 namespace CardServer.Games
 {
-    abstract class GenericGame
+    public abstract class GenericGame
     {
         protected Players.Player[] players;
         protected Deck deck;
@@ -14,6 +15,8 @@ namespace CardServer.Games
 
         protected Dictionary<Players.Player, List<int>> scores;
         protected Dictionary<Players.Player, Hand> hands;
+
+        protected int round = 0;
 
         protected List<Card> pool;
         protected Dictionary<Players.Player, List<Card>> played_cards;
@@ -46,9 +49,16 @@ namespace CardServer.Games
             }
         }
 
+        public abstract void Action(Players.Player p, GamePlayMessage msg);
+
         public Players.Player CurrentPlayer()
         {
             return players[current_player_ind];
+        }
+
+        public void IncrementPlayer()
+        {
+            current_player_ind = (current_player_ind + 1) % players.Length;
         }
 
         protected void SetPlayer(Players.Player p)
@@ -75,11 +85,13 @@ namespace CardServer.Games
 
                 foreach (int s in scores[p])
                 {
-                    overall_scores[p] += 1;
+                    overall_scores[p] += s;
                 }
             }
 
             return overall_scores;
         }
+
+        public abstract bool IsActive();
     }
 }
