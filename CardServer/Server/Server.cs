@@ -15,6 +15,7 @@ namespace CardServer.Server
     {
         class ServerTuple
         {
+            public Players.Player player;
             public TcpClient client;
             public NetworkStream stream;
         };
@@ -46,7 +47,7 @@ namespace CardServer.Server
 
                 GameConnectionMessage msg = (GameConnectionMessage)JsonConvert.DeserializeObject(response_str, typeof(GameConnectionMessage));
 
-                Players.Player p = null;
+                Players.Player player_obj = null;
 
                 if (msg.action == GameConnectionMessage.ActionType.NewUser)
                 {
@@ -57,26 +58,27 @@ namespace CardServer.Server
                     }
                 }
 
-                p = Players.PlayerDatabase.GetInstance().GetPlayerForName(
+                player_obj = Players.PlayerDatabase.GetInstance().GetPlayerForName(
                     username: msg.username,
                     hash: msg.password_hash);
 
-                if (p != null)
+                if (player_obj != null)
                 {
                     clients.Add(
-                        p,
+                        player_obj,
                         new ServerTuple()
                         {
+                            player = player_obj,
                             client = client,
                             stream = ns
                         });
                 }
             }
 
-            int i = 0;
-            while (i < clients.Count)
+            List<Players.Player> players = new List<Players.Player>(clients.Keys);
+            foreach (Players.Player p in players)
             {
-                ServerTuple c = clients[i];
+                ServerTuple c = clients[p];
 
                 if (!c.client.Connected)
                 {
@@ -87,8 +89,6 @@ namespace CardServer.Server
                 {
                     c.stream.ReadByte();
                 }
-
-                i += 1;
             }
         }
 
@@ -96,7 +96,7 @@ namespace CardServer.Server
         {
             st.stream.Close();
             st.client.Close();
-            clients.Remove(st);
+            clients.Remove(st.player);
         }
 
         public string ReadMessage(NetworkStream ns)
