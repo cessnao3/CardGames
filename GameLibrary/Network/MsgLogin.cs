@@ -6,7 +6,7 @@ namespace GameLibrary.Network
     /// <summary>
     /// Defines the game connection message for the client to connect to the server
     /// </summary>
-    public class GameConnectionMessage
+    public class MsgLogin : MsgBase
     {
         /// <summary>
         /// Defines the types of actions that can be used
@@ -31,5 +31,25 @@ namespace GameLibrary.Network
         /// Defines the password hash for the user
         /// </summary>
         public string password_hash;
+
+        /// <summary>
+        /// Constructor to set the server response
+        /// </summary>
+        public MsgLogin()
+        {
+            msg_type = MessageType.UserLogin;
+        }
+
+        /// <summary>
+        /// Checks whether message parameters are valid
+        /// </summary>
+        /// <returns>true if valid</returns>
+        public override bool CheckMessage()
+        {
+            return
+                username != null &&
+                password_hash != null &&
+                msg_type == MessageType.UserLogin;
+        }
     }
 }

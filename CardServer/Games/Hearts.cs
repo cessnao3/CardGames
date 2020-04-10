@@ -22,13 +22,13 @@ namespace CardServer.Games
             pass_round_complete = false;
         }
 
-        public override void Action(Players.Player p, GamePlayMessage msg)
+        public override void Action(Players.Player p, MsgGamePlay msg)
         {
             if (pass_round_complete)
             {
                 if (p == CurrentPlayer())
                 {
-                    if (msg.action == GameActions.Play)
+                    if (msg.action == GameActions.CardPlay)
                     {
                         if (hands[p].cards.Contains(msg.card))
                         {

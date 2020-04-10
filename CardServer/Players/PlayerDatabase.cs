@@ -69,7 +69,7 @@ namespace CardServer.Players
             }
         }
 
-        public bool NewPlayer(string name, string hash, bool save_db=true)
+        public bool CreateNewPlayer(string name, string hash, bool save_db=true)
         {
             if (!database.ContainsKey(name))
             {

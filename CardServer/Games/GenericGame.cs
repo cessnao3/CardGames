@@ -49,7 +49,7 @@ namespace CardServer.Games
             }
         }
 
-        public abstract void Action(Players.Player p, GamePlayMessage msg);
+        public abstract void Action(Players.Player p, MsgGamePlay msg);
 
         public Players.Player CurrentPlayer()
         {
