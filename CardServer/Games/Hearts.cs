@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using GameLibrary.Cards;
+using GameLibrary.Games;
 using GameLibrary.Messages;
 
 namespace CardServer.Games
@@ -10,7 +11,7 @@ namespace CardServer.Games
     {
         bool pass_round_complete = false;
 
-        public Hearts(Players.Player[] players) : base(players: players)
+        public Hearts(GamePlayer[] players) : base(players: players)
         {
             deck = new Deck();
             HandSetup();
@@ -22,7 +23,7 @@ namespace CardServer.Games
             pass_round_complete = false;
         }
 
-        public override void Action(Players.Player p, MsgGamePlay msg)
+        public override void Action(GamePlayer p, MsgGamePlay msg)
         {
             if (pass_round_complete)
             {
@@ -50,7 +51,7 @@ namespace CardServer.Games
             deck.Shuffle();
             while (deck.HasNext())
             {
-                foreach (Players.Player p in players)
+                foreach (GamePlayer p in players)
                 {
                     hands[p].AddCard(deck.Next());
                 }

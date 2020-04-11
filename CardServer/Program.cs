@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace CardServer
@@ -9,6 +10,9 @@ namespace CardServer
         {
             Console.WriteLine("Starting Card Game Server");
             Server.Server server = new Server.Server(8088);
+
+            List<Games.GenericGame> games = new List<Games.GenericGame>();
+            List<Object> available_games;
 
             while (true)
             {

@@ -2,26 +2,27 @@
 using System.Collections.Generic;
 using System.Text;
 using GameLibrary.Cards;
+using GameLibrary.Games;
 using GameLibrary.Messages;
 
 namespace CardServer.Games
 {
     public abstract class GenericGame
     {
-        protected Players.Player[] players;
+        protected GamePlayer[] players;
         protected Deck deck;
 
         protected int current_player_ind;
 
-        protected Dictionary<Players.Player, List<int>> scores;
-        protected Dictionary<Players.Player, Hand> hands;
+        protected Dictionary<GamePlayer, List<int>> scores;
+        protected Dictionary<GamePlayer, Hand> hands;
 
         protected int round = 0;
 
         protected List<Card> pool;
-        protected Dictionary<Players.Player, List<Card>> played_cards;
+        protected Dictionary<GamePlayer, List<Card>> played_cards;
 
-        public GenericGame(Players.Player[] players)
+        public GenericGame(GamePlayer[] players)
         {
             for (int i = 0; i < players.Length; ++i)
             {
@@ -37,11 +38,11 @@ namespace CardServer.Games
             pool = new List<Card>();
 
             this.players = players;
-            scores = new Dictionary<Players.Player, List<int>>();
-            hands = new Dictionary<Players.Player, Hand>();
-            played_cards = new Dictionary<Players.Player, List<Card>>();
+            scores = new Dictionary<GamePlayer, List<int>>();
+            hands = new Dictionary<GamePlayer, Hand>();
+            played_cards = new Dictionary<GamePlayer, List<Card>>();
 
-            foreach (Players.Player p in this.players)
+            foreach (GamePlayer p in this.players)
             {
                 scores.Add(p, new List<int>());
                 hands.Add(p, new Hand());
@@ -49,9 +50,9 @@ namespace CardServer.Games
             }
         }
 
-        public abstract void Action(Players.Player p, MsgGamePlay msg);
+        public abstract void Action(GamePlayer p, MsgGamePlay msg);
 
-        public Players.Player CurrentPlayer()
+        public GamePlayer CurrentPlayer()
         {
             return players[current_player_ind];
         }
@@ -61,7 +62,7 @@ namespace CardServer.Games
             current_player_ind = (current_player_ind + 1) % players.Length;
         }
 
-        protected void SetPlayer(Players.Player p)
+        protected void SetPlayer(GamePlayer p)
         {
             for (int i = 0; i < players.Length; ++i)
             {
@@ -75,11 +76,11 @@ namespace CardServer.Games
             throw new ArgumentException("Cannot set player who isn't in the game");
         }
 
-        public Dictionary<Players.Player, int> OverallScores()
+        public Dictionary<GamePlayer, int> OverallScores()
         {
-            Dictionary<Players.Player, int> overall_scores = new Dictionary<Players.Player, int>();
+            Dictionary<GamePlayer, int> overall_scores = new Dictionary<GamePlayer, int>();
 
-            foreach (Players.Player p in players)
+            foreach (GamePlayer p in players)
             {
                 overall_scores[p] = 0;
 

@@ -2,12 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CardServer.Players
+namespace GameLibrary.Games
 {
-    /// <summary>
-    /// Provides the definition for a player object
-    /// </summary>
-    public class Player
+    public class GamePlayer
     {
         /// <summary>
         /// Defines the player user name
@@ -15,28 +12,20 @@ namespace CardServer.Players
         public string name { get; set; }
 
         /// <summary>
-        /// Defines the default password hash
+        /// Default parameterless constructor
         /// </summary>
-        public string password_hash { get; set; }
-
-        /// <summary>
-        /// Empty constructor for use in serialization
-        /// </summary>
-        private Player()
+        private GamePlayer()
         {
             name = null;
-            password_hash = null;
         }
 
         /// <summary>
         /// Standard constructor to provide the definition for a player object
         /// </summary>
         /// <param name="name">The player's user name</param>
-        /// <param name="password_hash">The player's password hash</param>
-        public Player(string name, string password_hash)
+        public GamePlayer(string name)
         {
             this.name = name.ToLower().Trim();
-            this.password_hash = password_hash.ToLower().Trim();
         }
 
         /// <summary>
@@ -46,9 +35,9 @@ namespace CardServer.Players
         /// <returns>True if equal</returns>
         public override bool Equals(object obj)
         {
-            if (obj is Player)
+            if (obj is GamePlayer)
             {
-                return ((Player)obj).name.ToLower() == name.ToLower();
+                return ((GamePlayer)obj).name.ToLower() == name.ToLower();
             }
             else
             {
@@ -63,15 +52,6 @@ namespace CardServer.Players
         public override int GetHashCode()
         {
             return name.GetHashCode();
-        }
-
-        /// <summary>
-        /// Provides the game player instance for the given player
-        /// </summary>
-        /// <returns>An associated GamePlayer object</returns>
-        public GameLibrary.Games.GamePlayer GetGamePlayer()
-        {
-            return new GameLibrary.Games.GamePlayer(name: name);
         }
     }
 }
