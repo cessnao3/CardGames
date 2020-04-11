@@ -11,7 +11,7 @@ namespace CardServer.Games
     {
         bool pass_round_complete = false;
 
-        public Hearts(GamePlayer[] players) : base(players: players)
+        public Hearts(int game_id, GamePlayer[] players) : base(game_id: game_id, players: players)
         {
             deck = new Deck();
             HandSetup();
@@ -20,7 +20,7 @@ namespace CardServer.Games
         void HandSetup()
         {
             DealHand();
-            pass_round_complete = false;
+            pass_round_complete = true;
         }
 
         public override void Action(GamePlayer p, MsgGamePlay msg)
@@ -55,6 +55,11 @@ namespace CardServer.Games
                 {
                     hands[p].AddCard(deck.Next());
                 }
+            }
+
+            foreach (Hand h in hands.Values)
+            {
+                h.Sort();
             }
         }
 

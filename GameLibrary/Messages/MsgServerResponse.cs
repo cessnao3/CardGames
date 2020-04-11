@@ -25,6 +25,11 @@ namespace GameLibrary.Messages
         public ResponseCodes code;
 
         /// <summary>
+        /// Defines the current user parameter
+        /// </summary>
+        public Games.GamePlayer user;
+
+        /// <summary>
         /// Constructor to set the server response
         /// </summary>
         public MsgServerResponse() : base(MessageType.ServerResponse)
@@ -39,7 +44,8 @@ namespace GameLibrary.Messages
         public override bool CheckMessage()
         {
             return
-                msg_type == MessageType.ServerResponse;
+                msg_type == MessageType.ServerResponse &&
+                user != null;
         }
     }
 }

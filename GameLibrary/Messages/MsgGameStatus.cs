@@ -7,27 +7,32 @@ namespace GameLibrary.Messages
     /// <summary>
     /// Provides the game status for Hearts
     /// </summary>
-    class MsgGameStatus : MsgBase
+    public class MsgGameStatus : MsgBase
     {
+        /// <summary>
+        /// Defines the ID of the game
+        /// </summary>
+        public int game_id = -1;
+
         /// <summary>
         /// The players to read in
         /// </summary>
-        List<Games.GamePlayer> players;
+        public List<Games.GamePlayer> players;
 
         /// <summary>
         /// The hands for each player
         /// </summary>
-        List<Cards.Hand> hands;
+        public List<Cards.Hand> hands;
 
         /// <summary>
         /// Defines the current game status for different games
         /// </summary>
-        string current_game_status;
+        public string current_game_status;
 
         /// <summary>
         /// The current player needing to play
         /// </summary>
-        int current_player;
+        public int current_player;
 
         /// <summary>
         /// Default hearts game status constructor
@@ -47,7 +52,8 @@ namespace GameLibrary.Messages
                 msg_type == MessageType.GameStatus &&
                 players != null &&
                 hands != null &&
-                current_game_status != null;
+                current_game_status != null &&
+                game_id >= 0;
 
         }
     }

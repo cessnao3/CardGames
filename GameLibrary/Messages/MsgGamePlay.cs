@@ -21,7 +21,7 @@ namespace GameLibrary.Messages
         /// <summary>
         /// Defines the game ID to use
         /// </summary>
-        public string game_id = Guid.NewGuid().ToString();
+        public int game_id = -1;
 
         /// <summary>
         /// Defines the action to be performed by the game

@@ -9,6 +9,8 @@ namespace CardServer.Games
 {
     public abstract class GenericGame
     {
+        public int game_id { get; protected set; }
+
         protected GamePlayer[] players;
         protected Deck deck;
 
@@ -22,8 +24,10 @@ namespace CardServer.Games
         protected List<Card> pool;
         protected Dictionary<GamePlayer, List<Card>> played_cards;
 
-        public GenericGame(GamePlayer[] players)
+        public GenericGame(int game_id, GamePlayer[] players)
         {
+            this.game_id = game_id;
+
             for (int i = 0; i < players.Length; ++i)
             {
                 for (int j = i + 1; j < players.Length; ++j)
@@ -91,6 +95,27 @@ namespace CardServer.Games
             }
 
             return overall_scores;
+        }
+
+        virtual public MsgGameStatus GetGameStatus()
+        {
+            List<Hand> player_hands = new List<Hand>();
+
+            foreach (GamePlayer p in players)
+            {
+                player_hands.Add(hands[p]);
+            }
+
+            MsgGameStatus status_val = new MsgGameStatus()
+            {
+                players = new List<GamePlayer>(players),
+                hands = player_hands,
+                current_game_status = "",
+                current_player = current_player_ind,
+                game_id = game_id
+            };
+
+            return status_val;
         }
 
         public abstract bool IsActive();

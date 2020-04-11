@@ -16,8 +16,8 @@ namespace GameLibrary.Cards
         {
             Club = 1,
             Diamond = 2,
-            Heart = 3,
-            Spade = 4
+            Spade = 3,
+            Heart = 4
         };
 
         /// <summary>

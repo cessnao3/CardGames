@@ -25,23 +25,19 @@ namespace CardServer.Server
         };
 
         /// <summary>
-        /// Defines the message queue item
-        /// </summary>
-        public class MessageQueueItem
-        {
-            public Players.Player player;
-            public MsgBase msg;
-        }
-
-        /// <summary>
         /// Defines the dictionary to store client parameters with clients
         /// </summary>
         Dictionary<Players.Player, ServerTuple> clients = new Dictionary<Players.Player, ServerTuple>();
 
         /// <summary>
-        /// Defines the message queue list for the server status that can be used to check server parameters
+        /// Defines the message queue list that the server has received from clients
         /// </summary>
-        public List<MessageQueueItem> message_queue = new List<MessageQueueItem>();
+        Dictionary<Players.Player, List<MsgBase>> message_receive_queue = new Dictionary<Players.Player, List<MsgBase>>();
+
+        /// <summary>
+        /// Defines the message queue list for the server to send
+        /// </summary>
+        Dictionary<Players.Player, List<MsgBase>> message_send_queue = new Dictionary<Players.Player, List<MsgBase>>();
 
         /// <summary>
         /// Defines the server socket to use
@@ -142,12 +138,16 @@ namespace CardServer.Server
 
                     MessageReader.SendMessage(client, new MsgServerResponse()
                     {
-                        code = ResponseCodes.OK
+                        code = ResponseCodes.OK,
+                        user = player_obj.GetGamePlayer()
                     });
 
                     Console.WriteLine(string.Format("User {0:s} connected", player_obj.name));
                 }
             }
+
+            // Clear the output queues
+            message_receive_queue.Clear();
 
             // Loop through each of the player parameters client connection list
             foreach (Players.Player p in new List<Players.Player>(clients.Keys))
@@ -189,12 +189,14 @@ namespace CardServer.Server
 
                     if (msg_item != null)
                     {
-                        // Add the new message to the queue
-                        message_queue.Add(new MessageQueueItem()
+                        // Add the player to the queue if it doesn't exist
+                        if (!message_receive_queue.ContainsKey(p))
                         {
-                            player = p,
-                            msg = msg_item
-                        });
+                            message_receive_queue.Add(p, new List<MsgBase>());
+                        }
+
+                        // Add the new message to the queue
+                        message_receive_queue[p].Add(msg_item);
 
                         // Update the last receive count
                         c.last_receive = DateTime.UtcNow;
@@ -202,7 +204,41 @@ namespace CardServer.Server
 
                     i += 1;
                 }
+
+                // Loop through to send parameters to the clients
+                if (message_send_queue.ContainsKey(p))
+                {
+                    foreach (MsgBase msg in message_send_queue[p])
+                    {
+                        MessageReader.SendMessage(
+                            client: c.client,
+                            msg: msg);
+                    }
+                }
             }
+
+            // Clear the output queue
+            message_send_queue.Clear();
+        }
+
+        /// <summary>
+        /// Adds the provided message to the queue for the given player
+        /// </summary>
+        /// <param name="player">The player to add the message for</param>
+        /// <param name="msg">The message to add to the queue</param>
+        public void AddMessageToQueue(Players.Player player, MsgBase msg)
+        {
+            if (!message_send_queue.ContainsKey(player))
+            {
+                message_send_queue.Add(player, new List<MsgBase>());
+            }
+
+            message_send_queue[player].Add(msg);
+        }
+
+        public Dictionary<Players.Player, List<MsgBase>> GetReceivedMessages()
+        {
+            return message_receive_queue;
         }
 
         /// <summary>

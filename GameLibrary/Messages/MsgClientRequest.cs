@@ -11,22 +11,33 @@ namespace GameLibrary.Messages
         /// </summary>
         public enum RequestType
         {
-            AvailableGames = 0
+            AvailableGames = 0,
+            GameStatus = 10
         };
 
         /// <summary>
         /// The type of information to request from the client
         /// </summary>
         public RequestType request;
+        
+        /// <summary>
+        /// The GameID to request information for
+        /// </summary>
+        public int game_id;
 
         /// <summary>
         /// Constructor to set the server response
         /// </summary>
         public MsgClientRequest() : base(MessageType.ClientRequest)
         {
-            // Empty Constructor
+            // Define an initial invalid game_id
+            game_id = -1;
         }
 
+        /// <summary>
+        /// Checks whether the message type is valid
+        /// </summary>
+        /// <returns></returns>
         public override bool CheckMessage()
         {
             return msg_type == MessageType.ClientRequest;
