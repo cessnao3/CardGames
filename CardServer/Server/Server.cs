@@ -154,6 +154,17 @@ namespace CardServer.Server
                 // Extract the server tuple
                 ServerTuple c = clients[p];
 
+                // Attempt to send a heartbeat message
+                try
+                {
+                    MessageReader.SendMessage(c.client, new MsgHeartbeat());
+                }
+                catch (System.IO.IOException)
+                {
+                    CloseConnection(c);
+                    continue;
+                }
+
                 // Close the connection if not connected
                 // Otherwise, read the connection result
                 if (!c.client.Connected)
@@ -192,8 +203,7 @@ namespace CardServer.Server
         {
             st.client.Close();
             clients.Remove(st.player);
+            Console.WriteLine(string.Format("User {0:s} disconnected", st.player.name));
         }
-
-        
     }
 }

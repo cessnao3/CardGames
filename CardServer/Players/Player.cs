@@ -74,7 +74,5 @@ namespace CardServer.Players
         {
             return name.GetHashCode();
         }
-
-        
     }
 }

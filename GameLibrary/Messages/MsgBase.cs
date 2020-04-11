@@ -9,11 +9,12 @@ namespace GameLibrary.Messages
     /// </summary>
     public enum MessageType
     {
-        Invalid = -1,
-        UserLogin = 0,
+        Invalid = 0,
+        Heartbeat = 1,
         GameMessage = 10,
         ClientRequest = 20,
-        ServerResponse = 30
+        ServerResponse = 30,
+        UserLogin = 40
     };
 
     /// <summary>
