@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GameLibrary.Network
+namespace GameLibrary.Messages
 {
     /// <summary>
     /// Defines the types of messages we can use in the given parameters
     /// </summary>
     public enum MessageType
     {
+        Invalid = -1,
         UserLogin = 0,
         GameMessage = 10,
-        InformationRequest = 20,
+        ClientRequest = 20,
         ServerResponse = 30
     };
 
@@ -30,5 +31,22 @@ namespace GameLibrary.Network
         /// </summary>
         /// <returns>true if valid; otherwise false</returns>
         public abstract bool CheckMessage();
+
+        /// <summary>
+        /// Default parameterless constructor
+        /// </summary>
+        private MsgBase()
+        {
+            msg_type = MessageType.Invalid;
+        }
+
+        /// <summary>
+        /// Constructor to force definition of the message type
+        /// </summary>
+        /// <param name="msg_t">The message type to associate with the message</param>
+        public MsgBase(MessageType msg_t)
+        {
+            msg_type = msg_t;
+        }
     }
 }

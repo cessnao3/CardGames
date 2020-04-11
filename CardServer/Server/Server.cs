@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
-using Newtonsoft.Json;
+using System.Threading;
 using GameLibrary.Network;
+using GameLibrary.Messages;
 
 namespace CardServer.Server
 {
@@ -20,7 +21,6 @@ namespace CardServer.Server
         {
             public Players.Player player;
             public TcpClient client;
-            public NetworkStream stream;
         };
 
         /// <summary>
@@ -77,15 +77,33 @@ namespace CardServer.Server
                 ns.ReadTimeout = 1000;
 
                 // Read the response/init string from the network stream
-                string response_str = ReadMessage(ns);
+                MsgLogin msg = null;
+                int iter_lim = 0;
+                while (msg == null && iter_lim < 10)
+                {
+                    try
+                    {
+                        MsgBase msg_base = MessageReader.ReadMessage(client);
 
-                // Deserialize the result
-                MsgLogin msg = (MsgLogin)JsonConvert.DeserializeObject(response_str, typeof(MsgLogin));
+                        if (msg_base is MsgLogin)
+                        {
+                            msg = (MsgLogin)msg_base;
+                        }
+                    }
+                    catch (System.IO.IOException)
+                    {
+                        // Pass
+                    }
+
+                    // Sleep and wait for data
+                    iter_lim += 1;
+                    Thread.Sleep(100);
+                }
 
                 // Store the player object
                 Players.Player player_obj = null;
 
-                if (msg.CheckMessage())
+                if (msg != null && msg.CheckMessage())
                 {
                     // Create the new user if requested
                     if (msg.action == MsgLogin.ActionType.NewUser)
@@ -107,14 +125,25 @@ namespace CardServer.Server
                 // If the player object is found, setup the server tuple and add to the dictionary
                 if (player_obj != null)
                 {
+                    // Close any existing socket
+                    if (clients.ContainsKey(player_obj))
+                    {
+                        CloseConnection(clients[player_obj]);
+                    }
+
                     clients.Add(
                         player_obj,
                         new ServerTuple()
                         {
                             player = player_obj,
-                            client = client,
-                            stream = ns
+                            client = client
                         });
+
+                    MessageReader.SendMessage(client, new MsgServerResponse()
+                    {
+                        code = ResponseCodes.OK
+                    });
+
                     Console.WriteLine(string.Format("User {0:s} connected", player_obj.name));
                 }
             }
@@ -129,26 +158,28 @@ namespace CardServer.Server
                 // Otherwise, read the connection result
                 if (!c.client.Connected)
                 {
-                    Close(c);
+                    CloseConnection(c);
                     continue;
                 }
-                else if (c.client.Available > 0)
+
+                // Only loop for a given iteration count limit
+                int i = 0;
+                while (c.client.Available > 0 && i < 10)
                 {
-                    // Read the string
-                    string s = ReadMessage(c.stream);
-                    Console.Out.WriteLine(s);
+                    // Read the message parameter
+                    MsgBase msg_item = MessageReader.ReadMessage(c.client);
 
-                    MsgBase tmp = (MsgBase)JsonConvert.DeserializeObject(s, typeof(MsgBase));
-
-                    // Define the message item
-                    MsgBase msg_item = null;
-
-                    // Add the new message to the queue
-                    message_queue.Add(new MessageQueueItem()
+                    if (msg_item != null)
                     {
-                        player = p,
-                        msg = msg_item
-                    });
+                        // Add the new message to the queue
+                        message_queue.Add(new MessageQueueItem()
+                        {
+                            player = p,
+                            msg = msg_item
+                        });
+                    }
+
+                    i += 1;
                 }
             }
         }
@@ -157,29 +188,12 @@ namespace CardServer.Server
         /// Closes the server tuple provided
         /// </summary>
         /// <param name="st">The server tuple to close and remove from the client list</param>
-        void Close(ServerTuple st)
+        void CloseConnection(ServerTuple st)
         {
-            st.stream.Close();
             st.client.Close();
             clients.Remove(st.player);
         }
 
-        /// <summary>
-        /// Reads a complete JSON message from the network stream
-        /// </summary>
-        /// <param name="ns">The network stream to read</param>
-        /// <returns>A complete JSON string, if valid</returns>
-        public string ReadMessage(NetworkStream ns)
-        {
-            string s = string.Empty;
-            char c = '\0';
-            while (c != '}')
-            {
-                c = (char)ns.ReadByte();
-                s += c;
-            }
-
-            return s;
-        }
+        
     }
 }

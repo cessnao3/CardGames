@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GameLibrary.Network
+namespace GameLibrary.Messages
 {
     /// <summary>
     /// Defines the actions that can be taken by players in a game
@@ -36,9 +36,9 @@ namespace GameLibrary.Network
         /// <summary>
         /// Constructor to set the server response
         /// </summary>
-        public MsgGamePlay()
+        public MsgGamePlay() : base(MessageType.GameMessage)
         {
-            msg_type = MessageType.GameMessage;
+            // Empty Constructor
         }
 
         /// <summary>

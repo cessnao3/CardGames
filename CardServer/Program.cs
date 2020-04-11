@@ -7,12 +7,11 @@ namespace CardServer
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Starting Server");
+            Console.WriteLine("Starting Card Game Server");
             Server.Server server = new Server.Server(8088);
 
             while (true)
             {
-                //Console.WriteLine("Tick...");
                 server.Tick();
                 Thread.Sleep(100);
             }

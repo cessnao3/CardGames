@@ -4,24 +4,39 @@ using System.Text.Json;
 
 namespace CardServer.Players
 {
+    /// <summary>
+    /// Provides a database instance for players, with an option to save to a local file for storage
+    /// </summary>
     class PlayerDatabase
     {
+        /// <summary>
+        /// The raw player database dictionary
+        /// </summary>
         Dictionary<string, Player> database;
+
+        /// <summary>
+        /// An optional filename to save users to as a json structure
+        /// </summary>
         string db_fname;
 
-        protected PlayerDatabase() : this(db_fname: null)
-        {
-            // Empty Constructor
-        }
-
+        /// <summary>
+        /// Default player database constructor, with optional database filename to save
+        /// data for persistency between server starts
+        /// </summary>
+        /// <param name="db_fname"></param>
         protected PlayerDatabase(string db_fname=null)
         {
+            // Initialize the database and set the filename
             database = new Dictionary<string, Player>();
             this.db_fname = db_fname;
 
+            // Load the database
             LoadDatabase();
         }
 
+        /// <summary>
+        /// Saves the database to the provided file if not null
+        /// </summary>
         private void SaveDatabase()
         {
             if (db_fname != null)
@@ -32,6 +47,9 @@ namespace CardServer.Players
             }
         }
 
+        /// <summary>
+        /// Loads the database to the provided file if not null
+        /// </summary>
         private void LoadDatabase()
         {
             if (db_fname != null)
@@ -41,21 +59,35 @@ namespace CardServer.Players
                     System.IO.StreamReader json_reader = new System.IO.StreamReader(db_fname);
                     string data = json_reader.ReadToEnd();
                     database = (Dictionary<string, Player>)JsonSerializer.Deserialize(data, database.GetType());
+                    json_reader.Close();
                 }
                 catch (System.IO.FileNotFoundException)
                 {
-                    // Do nothing
+                    // Do nothing if the file cannot be found to load
                 }
             }
         }
 
+        /// <summary>
+        /// The static database instance for the current executable to utilize
+        /// </summary>
         private static PlayerDatabase db = new PlayerDatabase(db_fname: "users.json");
 
+        /// <summary>
+        /// Returns the player database isntance to utilize
+        /// </summary>
+        /// <returns></returns>
         public static PlayerDatabase GetInstance()
         {
             return db;
         }
 
+        /// <summary>
+        /// Provides the player for the given name and hash if all match. Otherwise, returns null on failure
+        /// </summary>
+        /// <param name="username">The username to search for</param>
+        /// <param name="hash">The has associated with the username</param>
+        /// <returns>Player if valid username and hash found; otherwise null</returns>
         public Player GetPlayerForName(string username, string hash)
         {
             if (database.ContainsKey(username))
@@ -69,6 +101,13 @@ namespace CardServer.Players
             }
         }
 
+        /// <summary>
+        /// Creates a new player with the provided username and hash values
+        /// </summary>
+        /// <param name="name">The username to create</param>
+        /// <param name="hash">The hash value to associate with the username</param>
+        /// <param name="save_db">Whether to call to save the database after the user is added</param>
+        /// <returns>True if the user can be created; otherwise false (e.g. username already exists)</returns>
         public bool CreateNewPlayer(string name, string hash, bool save_db=true)
         {
             if (!database.ContainsKey(name))

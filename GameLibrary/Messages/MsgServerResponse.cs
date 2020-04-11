@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GameLibrary.Network
+namespace GameLibrary.Messages
 {
     /// <summary>
     /// Defines default server response codes
@@ -27,9 +27,9 @@ namespace GameLibrary.Network
         /// <summary>
         /// Constructor to set the server response
         /// </summary>
-        public MsgServerResponse()
+        public MsgServerResponse() : base(MessageType.ServerResponse)
         {
-            msg_type = MessageType.ServerResponse;
+            // Empty Constructor
         }
 
         /// <summary>

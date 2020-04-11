@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using GameLibrary.Cards;
-using GameLibrary.Network;
+using GameLibrary.Messages;
 
 namespace CardServer.Games
 {

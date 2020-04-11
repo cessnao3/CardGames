@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GameLibrary.Network
+namespace GameLibrary.Messages
 {
     /// <summary>
     /// Defines the game connection message for the client to connect to the server
@@ -35,9 +35,9 @@ namespace GameLibrary.Network
         /// <summary>
         /// Constructor to set the server response
         /// </summary>
-        public MsgLogin()
+        public MsgLogin() : base(MessageType.UserLogin)
         {
-            msg_type = MessageType.UserLogin;
+            // Empty Constructor
         }
 
         /// <summary>
