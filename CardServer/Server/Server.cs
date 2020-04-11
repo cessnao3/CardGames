@@ -19,8 +19,9 @@ namespace CardServer.Server
         /// </summary>
         class ServerTuple
         {
-            public Players.Player player;
-            public TcpClient client;
+            public Players.Player player = null;
+            public TcpClient client = null;
+            public DateTime last_receive = DateTime.UtcNow;
         };
 
         /// <summary>
@@ -155,14 +156,20 @@ namespace CardServer.Server
                 ServerTuple c = clients[p];
 
                 // Attempt to send a heartbeat message
-                try
+                if (DateTime.UtcNow - c.last_receive > TimeSpan.FromSeconds(5))
                 {
-                    MessageReader.SendMessage(c.client, new MsgHeartbeat());
-                }
-                catch (System.IO.IOException)
-                {
-                    CloseConnection(c);
-                    continue;
+                    try
+                    {
+                        MessageReader.SendMessage(c.client, new MsgHeartbeat());
+                    }
+                    catch (System.IO.IOException)
+                    {
+                        Console.WriteLine("Heartbeat Timeout");
+                        CloseConnection(c);
+                        continue;
+                    }
+
+                    c.last_receive = DateTime.UtcNow;
                 }
 
                 // Close the connection if not connected
@@ -188,6 +195,9 @@ namespace CardServer.Server
                             player = p,
                             msg = msg_item
                         });
+
+                        // Update the last receive count
+                        c.last_receive = DateTime.UtcNow;
                     }
 
                     i += 1;
