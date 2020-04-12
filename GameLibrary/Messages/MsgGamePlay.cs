@@ -5,15 +5,6 @@ using System.Text;
 namespace GameLibrary.Messages
 {
     /// <summary>
-    /// Defines the actions that can be taken by players in a game
-    /// </summary>
-    public enum GameActions
-    {
-        CardPlay = 0,
-        CardPass = 1
-    };
-
-    /// <summary>
     /// Class to facilitate communication within a game
     /// </summary>
     public class MsgGamePlay : MsgBase
@@ -22,11 +13,6 @@ namespace GameLibrary.Messages
         /// Defines the game ID to use
         /// </summary>
         public int game_id = -1;
-
-        /// <summary>
-        /// Defines the action to be performed by the game
-        /// </summary>
-        public GameActions action;
 
         /// <summary>
         /// Sets up the player requesting the action

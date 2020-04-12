@@ -209,7 +209,7 @@ namespace CardServer.Games
         public override void Action(GamePlayer p, MsgGamePlay msg)
         {
             // Ensure that we are playing a card and the current hand contains the given card
-            if (msg.action != GameActions.CardPlay || !hands[p].cards.Contains(msg.card))
+            if (!hands[p].cards.Contains(msg.card))
             {
                 return;
             }
