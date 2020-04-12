@@ -105,7 +105,9 @@ namespace CardServer.Server
                     // Create the new user if requested
                     if (msg.action == MsgLogin.ActionType.NewUser)
                     {
-                        if (!Players.PlayerDatabase.GetInstance().CreateNewPlayer(name: msg.username, hash: msg.password_hash))
+                        if (!Players.PlayerDatabase.GetInstance().CreateNewPlayer(
+                            name: msg.username,
+                            hash: msg.password_hash))
                         {
                             // Close the connection on failure
                             client.Close();
@@ -114,7 +116,7 @@ namespace CardServer.Server
                     }
 
                     // Get the player object from the dictionary
-                    player_obj = Players.PlayerDatabase.GetInstance().GetPlayerForName(
+                    player_obj = Players.PlayerDatabase.GetInstance().CheckPlayerNameHash(
                         username: msg.username,
                         hash: msg.password_hash);
                 }
@@ -235,6 +237,25 @@ namespace CardServer.Server
 
             message_send_queue[player].Add(msg);
         }
+
+        /// <summary>
+        /// Adds the provided message to the queue for the given player
+        /// </summary>
+        /// <param name="player">The player to add the message for</param>
+        /// <param name="msg">The message to add to the queue</param>
+        public void AddMessageToQueue(GameLibrary.Games.GamePlayer gplayer, MsgBase msg)
+        {
+            Players.Player p = Players.PlayerDatabase.GetInstance().GetPlayerForName(gplayer.name);
+
+            if (p != null)
+            {
+                AddMessageToQueue(
+                    p,
+                    msg);
+            }
+        }
+
+
 
         public Dictionary<Players.Player, List<MsgBase>> GetReceivedMessages()
         {

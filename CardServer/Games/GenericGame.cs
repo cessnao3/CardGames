@@ -11,7 +11,7 @@ namespace CardServer.Games
     {
         public int game_id { get; protected set; }
 
-        protected GamePlayer[] players;
+        public GamePlayer[] players { get; protected set; }
         protected Deck deck;
 
         protected int current_player_ind;
@@ -21,7 +21,7 @@ namespace CardServer.Games
 
         protected int round = 0;
 
-        protected List<Card> pool;
+        protected Dictionary<GamePlayer, Card> center_pool;
         protected Dictionary<GamePlayer, List<Card>> played_cards;
 
         public GenericGame(int game_id, GamePlayer[] players)
@@ -39,7 +39,7 @@ namespace CardServer.Games
                 }
             }
 
-            pool = new List<Card>();
+            center_pool = new Dictionary<GamePlayer, Card>();
 
             this.players = players;
             scores = new Dictionary<GamePlayer, List<int>>();
@@ -100,10 +100,17 @@ namespace CardServer.Games
         virtual public MsgGameStatus GetGameStatus()
         {
             List<Hand> player_hands = new List<Hand>();
+            List<Card> pool_values = new List<Card>();
+            List<int> player_scores = new List<int>();
 
             foreach (GamePlayer p in players)
             {
                 player_hands.Add(hands[p]);
+
+                if (center_pool.ContainsKey(p)) pool_values.Add(center_pool[p]);
+                else pool_values.Add(null);
+
+                player_scores.Add(OverallScores()[p]);
             }
 
             MsgGameStatus status_val = new MsgGameStatus()
@@ -112,7 +119,9 @@ namespace CardServer.Games
                 hands = player_hands,
                 current_game_status = "",
                 current_player = current_player_ind,
-                game_id = game_id
+                game_id = game_id,
+                scores = player_scores,
+                center_pool = pool_values
             };
 
             return status_val;

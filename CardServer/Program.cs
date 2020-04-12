@@ -10,9 +10,15 @@ namespace CardServer
     {
         static void Main(string[] args)
         {
+            // Print output and setup parameters
             Console.WriteLine("Starting Card Game Server");
+            Console.WriteLine("Enabling Message Printing");
+            GameLibrary.Network.MessageReader.SetOutputPrinting(true);
+
+            // Start the Server
             Server.Server server = new Server.Server(8088);
 
+            // Setup a temporary game
             int current_id = 0;
 
             Dictionary<int, Games.GenericGame> games = new Dictionary<int, Games.GenericGame>();
@@ -62,7 +68,12 @@ namespace CardServer
                                 games[play.game_id].Action(
                                     p: p.GetGamePlayer(),
                                     msg: play);
-                                server.AddMessageToQueue(p, games[play.game_id].GetGameStatus());
+                                foreach (GameLibrary.Games.GamePlayer gplayer in games[play.game_id].players)
+                                {
+                                    server.AddMessageToQueue(
+                                        gplayer,
+                                        games[play.game_id].GetGameStatus());
+                                }
                             }
                         }
                     }

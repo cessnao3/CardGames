@@ -27,16 +27,21 @@ namespace CardServer.Games
         {
             if (pass_round_complete)
             {
-                if (p == CurrentPlayer())
+                if (p.Equals(CurrentPlayer()))
                 {
-                    if (msg.action == GameActions.CardPlay)
+                    if (msg.action == GameActions.CardPlay && hands[p].cards.Contains(msg.card))
                     {
-                        if (hands[p].cards.Contains(msg.card))
+                        // Reset the pool if all four cards have been played on the start of the next turn
+                        if (center_pool.Count == 4)
                         {
-                            hands[p].PlayCard(msg.card);
-                            played_cards[p].Add(msg.card);
-                            pool.Add(msg.card);
+                            center_pool.Clear();
                         }
+
+                        // Play the respective card from the hands
+                        hands[p].PlayCard(msg.card);
+                        played_cards[p].Add(msg.card);
+                        center_pool.Add(p, msg.card);
+                        IncrementPlayer();
                     }
                 }
             }

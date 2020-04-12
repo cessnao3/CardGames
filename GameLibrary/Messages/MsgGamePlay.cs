@@ -48,7 +48,7 @@ namespace GameLibrary.Messages
         public override bool CheckMessage()
         {
             return
-                game_id != null &&
+                game_id >= 0 &&
                 card != null &&
                 msg_type == MessageType.GameMessage;
         }

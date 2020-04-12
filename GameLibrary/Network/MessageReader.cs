@@ -9,10 +9,17 @@ namespace GameLibrary.Network
 {
     public class MessageReader
     {
+        protected static bool print_output = false;
+
+        static public void SetOutputPrinting(bool enabled)
+        {
+            print_output = enabled;
+        }
+
         static public void SendMessage(TcpClient client, MsgBase msg)
         {
             string s = JsonConvert.SerializeObject(msg);
-            Console.WriteLine("Sending " + s);
+            if (print_output) Console.WriteLine("Sending " + s);
             byte[] bytes = Encoding.ASCII.GetBytes(s);
             client.GetStream().Write(bytes, 0, bytes.Length);
             client.GetStream().Flush();
@@ -40,7 +47,7 @@ namespace GameLibrary.Network
                 }
 
                 // Print the string output
-                Console.WriteLine("Receiving " + s);
+                if (print_output) Console.WriteLine("Receiving " + s);
 
                 // Define the message item
                 MsgBase msg_item = null;

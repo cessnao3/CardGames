@@ -25,6 +25,16 @@ namespace GameLibrary.Messages
         public List<Cards.Hand> hands;
 
         /// <summary>
+        /// The center pool of cards for each player
+        /// </summary>
+        public List<Cards.Card> center_pool;
+
+        /// <summary>
+        /// The current score for each player
+        /// </summary>
+        public List<int> scores;
+
+        /// <summary>
         /// Defines the current game status for different games
         /// </summary>
         public string current_game_status;
@@ -53,8 +63,8 @@ namespace GameLibrary.Messages
                 players != null &&
                 hands != null &&
                 current_game_status != null &&
-                game_id >= 0;
-
+                game_id >= 0 &&
+                scores != null;
         }
     }
 }

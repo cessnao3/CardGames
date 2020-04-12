@@ -88,12 +88,30 @@ namespace CardServer.Players
         /// <param name="username">The username to search for</param>
         /// <param name="hash">The has associated with the username</param>
         /// <returns>Player if valid username and hash found; otherwise null</returns>
-        public Player GetPlayerForName(string username, string hash)
+        public Player CheckPlayerNameHash(string username, string hash)
+        {
+            Player p = GetPlayerForName(username);
+
+            if (p != null && p.password_hash == hash)
+            {
+                return p;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Provides a game player for the input name if present in the player dictionary
+        /// </summary>
+        /// <param name="username">The username to get the name player for</param>
+        /// <returns>The game player if it exists; otherwise null</returns>
+        public Player GetPlayerForName(string username)
         {
             if (database.ContainsKey(username))
             {
-                Player p = database[username];
-                return (p.password_hash == hash) ? p : null;
+                return database[username];
             }
             else
             {
