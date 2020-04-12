@@ -58,6 +58,19 @@ namespace CardServer.Games
             return players[current_player_ind];
         }
 
+        public bool ContainsPlayer(GamePlayer player)
+        {
+            foreach (GamePlayer p in players)
+            {
+                if (p.Equals(player))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void IncrementPlayer()
         {
             current_player_ind = (current_player_ind + 1) % players.Length;

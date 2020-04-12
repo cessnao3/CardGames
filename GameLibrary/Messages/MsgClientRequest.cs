@@ -4,6 +4,9 @@ using System.Text;
 
 namespace GameLibrary.Messages
 {
+    /// <summary>
+    /// Defines a client message request
+    /// </summary>
     public class MsgClientRequest : MsgBase
     {
         /// <summary>
@@ -12,7 +15,11 @@ namespace GameLibrary.Messages
         public enum RequestType
         {
             AvailableGames = 0,
-            GameStatus = 10
+            GameStatus = 10,
+            LobbyStatus = 20,
+            NewLobby = 30,
+            JoinLobby = 35,
+            LeaveLobby = 36
         };
 
         /// <summary>
@@ -24,6 +31,12 @@ namespace GameLibrary.Messages
         /// The GameID to request information for
         /// </summary>
         public int game_id;
+
+        /// <summary>
+        /// A specific data parameter that may or may not be used by
+        /// messages
+        /// </summary>
+        public int data = -1;
 
         /// <summary>
         /// Constructor to set the server response

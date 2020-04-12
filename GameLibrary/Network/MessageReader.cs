@@ -33,18 +33,20 @@ namespace GameLibrary.Network
                 NetworkStream ns = client.GetStream();
 
                 // Read the string
-                string s = string.Empty;
+                StringBuilder sb = new StringBuilder();
 
                 char c = '\0';
                 int colon_count = 0;
-                while (c != '}' || colon_count > 0)
+                while ((c != '}' || colon_count > 0) && sb.Length < 10240)
                 {
                     c = (char)ns.ReadByte();
-                    s += c;
+                    sb.Append(c);
 
                     if (c == '{') colon_count += 1;
                     else if (c == '}') colon_count -= 1;
                 }
+
+                string s = sb.ToString();
 
                 // Print the string output
                 if (print_output) Console.WriteLine("Receiving " + s);
@@ -60,7 +62,9 @@ namespace GameLibrary.Network
                         typeof(MsgServerResponse),
                         typeof(MsgClientRequest),
                         typeof(MsgGameStatus),
-                        typeof(MsgHeartbeat)
+                        typeof(MsgHeartbeat),
+                        typeof(MsgLobbyStatus),
+                        typeof(MsgGameList)
                 };
 
                 foreach (Type t in types_to_convert)

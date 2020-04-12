@@ -4,6 +4,9 @@ using System.Text;
 
 namespace GameLibrary.Games
 {
+    /// <summary>
+    /// Defines the properties for a specific game player
+    /// </summary>
     public class GamePlayer
     {
         /// <summary>

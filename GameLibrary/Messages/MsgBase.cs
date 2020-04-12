@@ -15,7 +15,9 @@ namespace GameLibrary.Messages
         ClientRequest = 20,
         ServerResponse = 30,
         UserLogin = 40,
-        GameStatus = 50
+        GameStatus = 50,
+        LobbyStatus = 60,
+        GameList = 70
     };
 
     /// <summary>

@@ -202,7 +202,7 @@ namespace CardServer.Games
 
                 // Deal the new round
                 round += 1;
-                DealHand();
+                HandSetup();
             }
         }
 
