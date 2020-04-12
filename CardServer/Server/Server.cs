@@ -212,9 +212,18 @@ namespace CardServer.Server
                 {
                     foreach (MsgBase msg in message_send_queue[p])
                     {
-                        MessageReader.SendMessage(
-                            client: c.client,
-                            msg: msg);
+                        try
+                        {
+                            MessageReader.SendMessage(
+                                client: c.client,
+                                msg: msg);
+                        }
+                        catch (System.IO.IOException)
+                        {
+                            Console.WriteLine("Message Send Fail");
+                            CloseConnection(c);
+                            continue;
+                        }
                     }
                 }
             }

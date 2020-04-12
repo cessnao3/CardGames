@@ -29,6 +29,22 @@ namespace GameLibrary.Games
         }
 
         /// <summary>
+        /// Provides the capitalized name
+        /// </summary>
+        /// <returns>string of the capitalized name</returns>
+        public string CapitalizedName()
+        {
+            if (name.Length > 1)
+            {
+                return name.Substring(0, 1).ToUpper() + name.Substring(1, name.Length - 1);
+            }
+            else
+            {
+                return name.ToUpper();
+            }
+        }
+
+        /// <summary>
         /// Determines if the object is equal to the player object
         /// </summary>
         /// <param name="obj">The object to compare to</param>

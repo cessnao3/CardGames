@@ -29,6 +29,11 @@ namespace GameLibrary.Messages
         public GameActions action;
 
         /// <summary>
+        /// Sets up the player requesting the action
+        /// </summary>
+        public Games.GamePlayer player;
+
+        /// <summary>
         /// Defines the card to play
         /// </summary>
         public Cards.Card card;
@@ -50,6 +55,7 @@ namespace GameLibrary.Messages
             return
                 game_id >= 0 &&
                 card != null &&
+                player != null &&
                 msg_type == MessageType.GameMessage;
         }
     }

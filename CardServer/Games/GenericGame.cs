@@ -22,7 +22,6 @@ namespace CardServer.Games
         protected int round = 0;
 
         protected Dictionary<GamePlayer, Card> center_pool;
-        protected Dictionary<GamePlayer, List<Card>> played_cards;
 
         public GenericGame(int game_id, GamePlayer[] players)
         {
@@ -44,13 +43,11 @@ namespace CardServer.Games
             this.players = players;
             scores = new Dictionary<GamePlayer, List<int>>();
             hands = new Dictionary<GamePlayer, Hand>();
-            played_cards = new Dictionary<GamePlayer, List<Card>>();
 
             foreach (GamePlayer p in this.players)
             {
                 scores.Add(p, new List<int>());
                 hands.Add(p, new Hand());
-                played_cards.Add(p, new List<Card>());
             }
         }
 

@@ -34,5 +34,36 @@ namespace GameLibrary.Cards
                 throw new ArgumentException("Cannot play a card that is not in the hand");
             }
         }
+
+        public bool HasCardOfSuit(Card.Suit suit)
+        {
+            foreach (Card c in cards)
+            {
+                if (c.suit == suit)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool HasCard(Card card)
+        {
+            foreach (Card c in cards)
+            {
+                if (c.Equals(card))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void Clear()
+        {
+            cards.Clear();
+        }
     }
 }

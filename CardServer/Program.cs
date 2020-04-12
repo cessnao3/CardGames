@@ -63,7 +63,7 @@ namespace CardServer
                         {
                             MsgGamePlay play = (MsgGamePlay)msg;
 
-                            if (games.ContainsKey(play.game_id))
+                            if (games.ContainsKey(play.game_id) && play.player.Equals(p.GetGamePlayer()))
                             {
                                 games[play.game_id].Action(
                                     p: p.GetGamePlayer(),
