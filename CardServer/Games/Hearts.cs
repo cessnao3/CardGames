@@ -7,23 +7,56 @@ using GameLibrary.Messages;
 
 namespace CardServer.Games
 {
+    /// <summary>
+    /// Defines the hearts-specific parameters for the Hearts game
+    /// </summary>
     public class Hearts : GenericGame
     {
+        /// <summary>
+        /// Game state to check if the passing round is complete
+        /// </summary>
         bool pass_round_complete = false;
+
+        /// <summary>
+        /// Game state to define if the first round has been played
+        /// </summary>
         bool first_round = false;
+
+        /// <summary>
+        /// Game state to determine if hearts have been broken
+        /// </summary>
         bool hearts_broken = false;
 
+        /// <summary>
+        /// Game state to store the leading card in a trick
+        /// </summary>
         Card lead_card = null;
+
+        /// <summary>
+        /// Game parameter to store the lead card
+        /// </summary>
         static readonly Card start_card = new Card(
             suit: Card.Suit.Club,
             value: Card.Value.Two);
 
-        string round_msg = null;
+        /// <summary>
+        /// Message to store in a given round to provide as a game update to players
+        /// </summary>
+        string trick_msg = null;
 
+        /// <summary>
+        /// Game state to store the individual round scores for players for the current round only
+        /// </summary>
         Dictionary<GamePlayer, int> round_scores = new Dictionary<GamePlayer, int>();
 
+        /// <summary>
+        /// Game state to store the cards to be passed to the various players
+        /// </summary>
         Dictionary<GamePlayer, List<Card>> passing_cards = new Dictionary<GamePlayer, List<Card>>();
 
+        /// <summary>
+        /// Definition for the direction that cards should be passed
+        /// </summary>
         enum PassDirection
         {
             Left = 0,
@@ -32,12 +65,30 @@ namespace CardServer.Games
             None = 3
         };
 
+        /// <summary>
+        /// Constructor to create the Hearts game
+        /// </summary>
+        /// <param name="game_id">The Game ID to associate with the Hearts game</param>
+        /// <param name="players">The players to add to the hearts game</param>
         public Hearts(int game_id, GamePlayer[] players) : base(game_id: game_id, players: players)
         {
+            // Throw an error if an invalid number of players are provided
+            if (players.Length != 4)
+            {
+                throw new ArgumentException("Four players must be provided to a Hearts game");
+            }
+
+            // Create the card deck
             deck = new Deck();
-            HandSetup();
+
+            // Setup for the first hand
+            SetupNewRound();
         }
 
+        /// <summary>
+        /// Determine the current passing direction based on the current round
+        /// </summary>
+        /// <returns>Provides the passing direction for the current round</returns>
         PassDirection CurrentPassDirection()
         {
             switch (round % 4)
@@ -53,14 +104,36 @@ namespace CardServer.Games
             }
         }
 
-        void HandSetup()
+        /// <summary>
+        /// Sets up the game state for a new hand
+        /// </summary>
+        protected override void SetupNewRound()
         {
-            DealHand();
+            // Clear player hands
+            foreach (GamePlayer p in players) hands[p].Clear();
 
+            // Shuffle the deck and deal to each player
+            deck.Shuffle();
+            while (deck.HasNext())
+            {
+                foreach (GamePlayer p in players)
+                {
+                    hands[p].AddCard(deck.Next());
+                }
+            }
+
+            // Sort the resulting player hands
+            foreach (Hand h in hands.Values)
+            {
+                h.Sort();
+            }
+
+            // Setup the game state for the next round
             pass_round_complete = CurrentPassDirection() == PassDirection.None;
             first_round = true;
             hearts_broken = false;
 
+            // Setup each of the list game state parameter
             passing_cards.Clear();
             round_scores.Clear();
             foreach (GamePlayer p in players)
@@ -69,6 +142,7 @@ namespace CardServer.Games
                 passing_cards.Add(p, new List<Card>());
             }
 
+            // Set the starting player index based on whether the passing round is complete or not
             if (!pass_round_complete)
             {
                 current_player_ind = -1;
@@ -79,23 +153,14 @@ namespace CardServer.Games
             }
         }
 
-        void SetCurrentPlayer(GamePlayer p)
-        {
-            for (int i = 0; i < players.Length; ++i)
-            {
-                if (players[i].Equals(p))
-                {
-                    current_player_ind = i;
-                    break;
-                }
-            }
-        }
-
+        /// <summary>
+        /// Determine the starting player based on whichever player has the starting card
+        /// </summary>
         void DetermineStartingPlayer()
         {
             foreach (GamePlayer p in players)
             {
-                if (hands[p].HasCard(new Card(suit: Card.Suit.Club, value: Card.Value.Two)))
+                if (hands[p].HasCard(start_card))
                 {
                     SetCurrentPlayer(p);
                     break;
@@ -103,7 +168,10 @@ namespace CardServer.Games
             }
         }
 
-        void FinishRound()
+        /// <summary>
+        /// Finishes a trick and updates the game state accordingly
+        /// </summary>
+        void FinishTrick()
         {
             // Skip if the center pool isn't full
             if (center_pool.Count != 4) return;
@@ -162,6 +230,7 @@ namespace CardServer.Games
                 }
             }
 
+            // Finish the round if the round is complete
             if (round_complete)
             {
                 // Add up the scores
@@ -200,12 +269,16 @@ namespace CardServer.Games
                     }
                 }
 
-                // Deal the new round
-                round += 1;
-                HandSetup();
+                // Setup and deal the new round
+                FinishRound();
             }
         }
 
+        /// <summary>
+        /// Perform a player action
+        /// </summary>
+        /// <param name="p">The player requesting the action</param>
+        /// <param name="msg">The game play message to respond to</param>
         public override void Action(GamePlayer p, MsgGamePlay msg)
         {
             // Ensure that we are playing a card and the current hand contains the given card
@@ -230,7 +303,7 @@ namespace CardServer.Games
                     if (first_round && !msg.card.Equals(start_card))
                     {
                         card_valid = false;
-                        round_msg = "Must lead the two of clubs";
+                        trick_msg = "Must lead the two of clubs";
                     }
                     // Check if trying to lead a heart before hearts has been broken
                     else if (
@@ -240,15 +313,16 @@ namespace CardServer.Games
                         (h.HasCardOfSuit(Card.Suit.Club) || h.HasCardOfSuit(Card.Suit.Diamond) || h.HasCardOfSuit(Card.Suit.Spade)))
                     {
                         card_valid = false;
-                        round_msg = "Hearts hasn't been broken yet!";
+                        trick_msg = "Hearts hasn't been broken yet!";
                     }
                     // Check if a player has a card of the lead suit before playing
                     else if (lead_card != null && lead_card.suit != msg.card.suit && h.HasCardOfSuit(lead_card.suit))
                     {
                         card_valid = false;
-                        round_msg = "Must play a card of the lead suit";
+                        trick_msg = "Must play a card of the lead suit";
                     }
 
+                    // Only play the card if the card is actually active
                     if (card_valid)
                     {
                         // Check if the lead card is valid
@@ -271,7 +345,7 @@ namespace CardServer.Games
                         // Set the next player, finishing the round if necessary
                         if (center_pool.Count == 4)
                         {
-                            FinishRound();
+                            FinishTrick();
                         }
                         else
                         {
@@ -282,7 +356,7 @@ namespace CardServer.Games
                         first_round = false;
 
                         // Reset the round message
-                        round_msg = null;
+                        trick_msg = null;
                     }
                 }
             }
@@ -314,6 +388,7 @@ namespace CardServer.Games
                 // Complete the passing round if possible
                 if (can_complete_round)
                 {
+                    // Determine the index modifier to add to the player index for passing 
                     int modifier = 0;
 
                     switch (CurrentPassDirection())
@@ -329,49 +404,37 @@ namespace CardServer.Games
                             break;
                     }
 
+                    // Loop through each of the players
                     for (int i = 0; i < players.Length; ++i)
                     {
+                        // Extract the to/from players for passing cards
                         GamePlayer from_player = players[i];
                         GamePlayer to_player = players[(i + modifier) % players.Length];
 
+                        // Add each of the cards from the passing player to the receiving player's hand
                         foreach (Card c in passing_cards[from_player])
                         {
                             hands[to_player].AddCard(c);
                         }
 
+                        // Sort the respective player's hand
                         hands[to_player].Sort();
                     }
 
+                    // Set the passing round as complete and determine the starting player
                     pass_round_complete = true;
                     DetermineStartingPlayer();
                 }
             }
         }
 
-        private void DealHand()
-        {
-            foreach (GamePlayer p in players)
-            {
-                hands[p].Clear();
-            }
-
-            deck.Shuffle();
-            while (deck.HasNext())
-            {
-                foreach (GamePlayer p in players)
-                {
-                    hands[p].AddCard(deck.Next());
-                }
-            }
-
-            foreach (Hand h in hands.Values)
-            {
-                h.Sort();
-            }
-        }
-
+        /// <summary>
+        /// Determines if the game is active
+        /// </summary>
+        /// <returns>True if the game is still playable</returns>
         public override bool IsActive()
         {
+            // Loop through each game, returning false if any score is over 100
             foreach (int s in OverallScores().Values)
             {
                 if (s >= 100)
@@ -380,30 +443,47 @@ namespace CardServer.Games
                 }
             }
 
+            // Otherwise, return true as still playable/active
             return true;
         }
 
+        /// <summary>
+        /// Provides the current Hearts game status
+        /// </summary>
+        /// <returns>The game status provided in a message that can be sent over the network</returns>
         override public MsgGameStatus GetGameStatus()
         {
+            // Determine the base class game status
             MsgGameStatus msg = base.GetGameStatus();
+
+            // If the passing round is complete, note player turns
             if (pass_round_complete)
             {
+                // Setup the player turn
                 msg.current_game_status = string.Format(
                     "{0:}'s Turn",
                     CurrentPlayer().CapitalizedName());
 
-                if (round_msg != null && round_msg.Length > 0)
+                // Append any trick message to the game status if provided
+                if (trick_msg != null && trick_msg.Length > 0)
                 {
-                    msg.current_game_status += " - " + round_msg;
+                    msg.current_game_status += string.Format(
+                        "{0:} - {:1}",
+                        msg.current_game_status,
+                        trick_msg);
                 }
             }
+            // Otherwise, state the current passing parameters
             else
             {
                 msg.current_game_status = string.Format(
                     "Passing Cards {0:}",
-                    Enum.GetName(typeof(PassDirection), CurrentPassDirection()));
+                    Enum.GetName(
+                        typeof(PassDirection),
+                        CurrentPassDirection()));
             }
 
+            // Return the resulting message
             return msg;
         }
     }

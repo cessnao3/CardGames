@@ -27,19 +27,25 @@ namespace CardServer
 
             while (true)
             {
+                // Tick the TCP server
                 server.Tick();
-                Thread.Sleep(100);
 
+                // Loop through all received messages
                 foreach (var item in server.GetReceivedMessages())
                 {
+                    // Extract the player
                     Players.Player p = item.Key;
 
+                    // Loop through each message in the list
                     foreach (MsgBase msg in item.Value)
                     {
+                        // Check if the message is a client request
                         if (msg is MsgClientRequest)
                         {
+                            // Type cast
                             MsgClientRequest req = (MsgClientRequest)msg;
 
+                            // Switch to perform actions based on the message request type received
                             switch (req.request)
                             {
                                 case MsgClientRequest.RequestType.GameStatus:
@@ -70,15 +76,18 @@ namespace CardServer
                                     if (lobbies.ContainsKey(req.game_id)) server.AddMessageToQueue(p, lobbies[req.game_id].GetLobbyStatus());
                                     break;
                                 case MsgClientRequest.RequestType.NewLobby:
+                                    // Add a lobby, and send the lobby status back to the player
                                     lobbies.Add(
                                         current_id,
                                         new Games.GameLobby(
                                             game_id: current_id,
                                             (GameLibrary.Games.GameTypes)req.data));
                                     server.AddMessageToQueue(p, lobbies[current_id].GetLobbyStatus());
+                                    // Increment the game ID
                                     current_id += 1;
                                     break;
                                 case MsgClientRequest.RequestType.JoinLobby:
+                                    // Request to join the lobby if the game ID exists, and send a lobby status as a response
                                     if (lobbies.ContainsKey(req.game_id))
                                     {
                                         lobbies[req.game_id].JoinLobby(
@@ -88,6 +97,7 @@ namespace CardServer
                                     }
                                     break;
                                 case MsgClientRequest.RequestType.LeaveLobby:
+                                    // Request to leave the lobby if the game ID exists, and send a lobby status as a response
                                     if (lobbies.ContainsKey(req.game_id))
                                     {
                                         lobbies[req.game_id].LeaveLobby(player: p.GetGamePlayer());
@@ -96,15 +106,21 @@ namespace CardServer
                                     break;
                             }
                         }
+                        // Parse the message as a game play
                         else if (msg is MsgGamePlay)
                         {
+                            // Type cast
                             MsgGamePlay play = (MsgGamePlay)msg;
 
+                            // Check if the game exists and the game contains the given player
                             if (games.ContainsKey(play.game_id) && play.player.Equals(p.GetGamePlayer()))
                             {
+                                // Call the action item on the given game
                                 games[play.game_id].Action(
                                     p: p.GetGamePlayer(),
                                     msg: play);
+
+                                // Send a server response to each player in the game
                                 foreach (GameLibrary.Games.GamePlayer gplayer in games[play.game_id].players)
                                 {
                                     server.AddMessageToQueue(
@@ -120,6 +136,7 @@ namespace CardServer
                 List<int> lobby_ids = new List<int>(lobbies.Keys);
                 foreach (int l_id in lobby_ids)
                 {
+                    // Convert any lobbies that are ready into games
                     if (lobbies[l_id].LobbyReady())
                     {
                         games.Add(
@@ -127,11 +144,15 @@ namespace CardServer
                             lobbies[l_id].CreateGame());
                         lobbies.Remove(l_id);
                     }
+                    // Remove any lobbies that have timed out
                     else if (lobbies[l_id].Timeout())
                     {
                         lobbies.Remove(l_id);
                     }
                 }
+
+                // Sleep to avoi dticking the server too frequently
+                Thread.Sleep(100);
             }
         }
     }
