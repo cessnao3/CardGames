@@ -151,6 +151,16 @@ namespace CardServer
                     }
                 }
 
+                // Check for any games that may be removed
+                List<int> game_ids = new List<int>(games.Keys);
+                foreach (int g_id in game_ids)
+                {
+                    if (games[g_id].Timeout())
+                    {
+                        games.Remove(g_id);
+                    }
+                }
+
                 // Sleep to avoi dticking the server too frequently
                 Thread.Sleep(100);
             }

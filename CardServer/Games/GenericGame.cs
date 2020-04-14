@@ -53,6 +53,11 @@ namespace CardServer.Games
         protected Dictionary<GamePlayer, Card> center_pool;
 
         /// <summary>
+        /// Determines when the last game status update was sent out
+        /// </summary>
+        DateTime last_update_sent = DateTime.UtcNow;
+
+        /// <summary>
         /// Constructs the generic game class
         /// </summary>
         /// <param name="game_id">The game ID of the game</param>
@@ -107,7 +112,11 @@ namespace CardServer.Games
         protected virtual void FinishRound()
         {
             round += 1;
-            SetupNewRound();
+
+            if (IsActive())
+            {
+                SetupNewRound();
+            }
         }
 
         /// <summary>
@@ -153,7 +162,7 @@ namespace CardServer.Games
         {
             for (int i = 0; i < players.Length; ++i)
             {
-                if (p == players[i])
+                if (players[i].Equals(p))
                 {
                     current_player_ind = i;
                     return;
@@ -193,6 +202,8 @@ namespace CardServer.Games
         /// <returns>The game status provided in a message that can be sent over the network</returns>
         virtual public MsgGameStatus GetGameStatus()
         {
+            last_update_sent = DateTime.UtcNow;
+
             List<Hand> player_hands = new List<Hand>();
             List<Card> pool_values = new List<Card>();
             List<int> player_scores = new List<int>();
@@ -226,5 +237,17 @@ namespace CardServer.Games
         /// </summary>
         /// <returns>True if the game is still playable</returns>
         public abstract bool IsActive();
+
+        /// <summary>
+        /// Determines the game is not longer active and has timed and
+        /// and may be deleted
+        /// </summary>
+        /// <returns>True if the game has timed out</returns>
+        public bool Timeout()
+        {
+            return
+                !IsActive() &&
+                DateTime.UtcNow - last_update_sent > TimeSpan.FromMinutes(5);
+        }
     }
 }

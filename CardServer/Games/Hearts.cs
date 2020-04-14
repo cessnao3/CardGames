@@ -18,9 +18,9 @@ namespace CardServer.Games
         bool pass_round_complete = false;
 
         /// <summary>
-        /// Game state to define if the first round has been played
+        /// Defines the current trick count
         /// </summary>
-        bool first_round = false;
+        int trick_count = 0;
 
         /// <summary>
         /// Game state to determine if hearts have been broken
@@ -38,6 +38,13 @@ namespace CardServer.Games
         static readonly Card start_card = new Card(
             suit: Card.Suit.Club,
             value: Card.Value.Two);
+
+        /// <summary>
+        /// Defines the special queen of spades card
+        /// </summary>
+        static readonly Card queen_spades = new Card(
+            suit: Card.Suit.Spade,
+            value: Card.Value.Queen);
 
         /// <summary>
         /// Message to store in a given round to provide as a game update to players
@@ -130,7 +137,7 @@ namespace CardServer.Games
 
             // Setup the game state for the next round
             pass_round_complete = CurrentPassDirection() == PassDirection.None;
-            first_round = true;
+            trick_count = 0;
             hearts_broken = false;
 
             // Setup each of the list game state parameter
@@ -176,6 +183,9 @@ namespace CardServer.Games
             // Skip if the center pool isn't full
             if (center_pool.Count != 4) return;
 
+            // Increment the trick count
+            trick_count += 1;
+
             // Determine the winner of the suit
             Card winning_card = lead_card;
             int points_to_add = 0;
@@ -193,13 +203,14 @@ namespace CardServer.Games
                     points_to_add += 1;
                     hearts_broken = true;
                 }
-                else if (c.suit == Card.Suit.Spade && c.value == Card.Value.Queen)
+                else if (c.Equals(queen_spades))
                 {
                     points_to_add += 13;
                 }
 
                 // Determine the new "winning" player of the round
-                if (c.suit == winning_card.suit && c.value >= winning_card.value)
+                if (c.suit == winning_card.suit &&
+                    c.value >= winning_card.value)
                 {
                     winning_card = c;
                     winning_player = p;
@@ -275,6 +286,18 @@ namespace CardServer.Games
         }
 
         /// <summary>
+        /// Sets the trick message. If the message is already set, does nothing
+        /// </summary>
+        /// <param name="msg">The new message to set as the trick message</param>
+        void SetTrickMessage(string msg)
+        {
+            if (trick_msg == null || trick_msg.Length == 0)
+            {
+                trick_msg = msg;
+            }
+        }
+
+        /// <summary>
         /// Perform a player action
         /// </summary>
         /// <param name="p">The player requesting the action</param>
@@ -297,29 +320,73 @@ namespace CardServer.Games
 
                     // Extract the current hand
                     Hand h = hands[p];
-                        
+
+                    // Perform checks for lead parameters
+                    if (lead_card == null)
+                    {
+                        // Check if trying to lead a heart before hearts has been broken
+                        if (msg.card.suit == Card.Suit.Heart &&
+                            !hearts_broken &&
+                            (h.HasCardOfSuit(Card.Suit.Club) || h.HasCardOfSuit(Card.Suit.Diamond) || h.HasCardOfSuit(Card.Suit.Spade)))
+                        {
+                            card_valid = false;
+                            SetTrickMessage("Hearts hasn't been broken yet!");
+                        }
+                    }
+                    else
+                    {
+                        // Check if a player has a card of the lead suit before playing
+                        if (lead_card.suit != msg.card.suit &&
+                            h.HasCardOfSuit(lead_card.suit))
+                        {
+                            card_valid = false;
+                            SetTrickMessage("Must play a card of the lead suit");
+                        }
+                    }
 
                     // Check if the first round for the two of clubs
-                    if (first_round && !msg.card.Equals(start_card))
+                    if (trick_count == 0)
                     {
-                        card_valid = false;
-                        trick_msg = "Must lead the two of clubs";
-                    }
-                    // Check if trying to lead a heart before hearts has been broken
-                    else if (
-                        lead_card == null &&
-                        msg.card.suit == Card.Suit.Heart &&
-                        !hearts_broken &&
-                        (h.HasCardOfSuit(Card.Suit.Club) || h.HasCardOfSuit(Card.Suit.Diamond) || h.HasCardOfSuit(Card.Suit.Spade)))
-                    {
-                        card_valid = false;
-                        trick_msg = "Hearts hasn't been broken yet!";
-                    }
-                    // Check if a player has a card of the lead suit before playing
-                    else if (lead_card != null && lead_card.suit != msg.card.suit && h.HasCardOfSuit(lead_card.suit))
-                    {
-                        card_valid = false;
-                        trick_msg = "Must play a card of the lead suit";
+                        // Check for the start card
+                        if (lead_card == null && !msg.card.Equals(start_card))
+                        {
+                            card_valid = false;
+                            SetTrickMessage("Must lead the two of clubs");
+                        }
+
+                        // Check for the queen of spades or hearts on the first round
+                        if (msg.card.suit == Card.Suit.Heart ||
+                            msg.card.Equals(queen_spades))
+                        {
+                            // Loop through to check if the player has another card they can play
+                            bool has_another_card = false;
+                            bool has_queen_of_spades = false;
+                            foreach (Card c in h.cards)
+                            {
+                                if (c.suit != Card.Suit.Heart &&
+                                    !c.Equals(queen_spades))
+                                {
+                                    has_another_card = true;
+                                }
+                                if (c.Equals(queen_spades))
+                                {
+                                    has_queen_of_spades = true;
+                                }
+                            }
+
+                            // Set the message as invalid on teh first round
+                            if (has_another_card)
+                            {
+                                card_valid = false;
+                                SetTrickMessage("Cannot play points on the first trick");
+                            }
+                            // Player must play queen of spades if they have it
+                            else if (has_queen_of_spades && !msg.card.Equals(queen_spades))
+                            {
+                                card_valid = false;
+                                SetTrickMessage("Must play the queen of spades");
+                            }
+                        }
                     }
 
                     // Only play the card if the card is actually active
@@ -351,9 +418,6 @@ namespace CardServer.Games
                         {
                             IncrementPlayer();
                         }
-
-                        // Set the first round as false
-                        first_round = false;
 
                         // Reset the round message
                         trick_msg = null;
@@ -457,7 +521,11 @@ namespace CardServer.Games
             MsgGameStatus msg = base.GetGameStatus();
 
             // If the passing round is complete, note player turns
-            if (pass_round_complete)
+            if (!IsActive())
+            {
+                msg.current_game_status = "Game Over";
+            }
+            else if (pass_round_complete)
             {
                 // Setup the player turn
                 msg.current_game_status = string.Format(
@@ -467,8 +535,8 @@ namespace CardServer.Games
                 // Append any trick message to the game status if provided
                 if (trick_msg != null && trick_msg.Length > 0)
                 {
-                    msg.current_game_status += string.Format(
-                        "{0:} - {:1}",
+                    msg.current_game_status = string.Format(
+                        "{0:} - {1:}",
                         msg.current_game_status,
                         trick_msg);
                 }
