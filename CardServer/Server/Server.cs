@@ -4,8 +4,8 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using GameLibrary.Network;
-using GameLibrary.Messages;
+using CardGameLibrary.Network;
+using CardGameLibrary.Messages;
 
 namespace CardServer.Server
 {
@@ -20,7 +20,7 @@ namespace CardServer.Server
         class ServerTuple
         {
             public Players.Player player = null;
-            public TcpClient client = null;
+            public ClientStruct client_struct = null;
             public DateTime last_receive = DateTime.UtcNow;
         };
 
@@ -69,9 +69,8 @@ namespace CardServer.Server
                 TcpClient client = server_socket.AcceptTcpClient();
                 client.ReceiveTimeout = 1000;
 
-                // Set the the network stream read timeout
-                NetworkStream ns = client.GetStream();
-                ns.ReadTimeout = 1000;
+                // Define the client struct
+                ClientStruct client_struct = new ClientStruct(client);
 
                 // Read the response/init string from the network stream
                 MsgLogin msg = null;
@@ -80,7 +79,7 @@ namespace CardServer.Server
                 {
                     try
                     {
-                        MsgBase msg_base = MessageReader.ReadMessage(client);
+                        MsgBase msg_base = MessageReader.ReadMessage(client_struct);
 
                         if (msg_base is MsgLogin)
                         {
@@ -135,10 +134,10 @@ namespace CardServer.Server
                         new ServerTuple()
                         {
                             player = player_obj,
-                            client = client
+                            client_struct = client_struct
                         });
 
-                    MessageReader.SendMessage(client, new MsgServerResponse()
+                    MessageReader.SendMessage(client_struct, new MsgServerResponse()
                     {
                         code = ResponseCodes.OK,
                         user = player_obj.GetGamePlayer()
@@ -162,7 +161,7 @@ namespace CardServer.Server
                 {
                     try
                     {
-                        MessageReader.SendMessage(c.client, new MsgHeartbeat());
+                        MessageReader.SendMessage(c.client_struct, new MsgHeartbeat());
                     }
                     catch (System.IO.IOException)
                     {
@@ -176,7 +175,7 @@ namespace CardServer.Server
 
                 // Close the connection if not connected
                 // Otherwise, read the connection result
-                if (!c.client.Connected)
+                if (!c.client_struct.client.Connected)
                 {
                     CloseConnection(c);
                     continue;
@@ -184,10 +183,10 @@ namespace CardServer.Server
 
                 // Only loop for a given iteration count limit
                 int i = 0;
-                while (c.client.Available > 0 && i < 10)
+                while (c.client_struct.client.Available > 0 && i < 10)
                 {
                     // Read the message parameter
-                    MsgBase msg_item = MessageReader.ReadMessage(c.client);
+                    MsgBase msg_item = MessageReader.ReadMessage(c.client_struct);
 
                     if (msg_item != null)
                     {
@@ -215,7 +214,7 @@ namespace CardServer.Server
                         try
                         {
                             MessageReader.SendMessage(
-                                client: c.client,
+                                client: c.client_struct,
                                 msg: msg);
                         }
                         catch (System.IO.IOException)
@@ -252,7 +251,7 @@ namespace CardServer.Server
         /// </summary>
         /// <param name="player">The player to add the message for</param>
         /// <param name="msg">The message to add to the queue</param>
-        public void AddMessageToQueue(GameLibrary.Games.GamePlayer gplayer, MsgBase msg)
+        public void AddMessageToQueue(CardGameLibrary.Games.GamePlayer gplayer, MsgBase msg)
         {
             Players.Player p = Players.PlayerDatabase.GetInstance().GetPlayerForName(gplayer.name);
 
@@ -277,7 +276,7 @@ namespace CardServer.Server
         /// <param name="st">The server tuple to close and remove from the client list</param>
         void CloseConnection(ServerTuple st)
         {
-            st.client.Close();
+            st.client_struct.Close();
             clients.Remove(st.player);
             Console.WriteLine(string.Format("User {0:s} disconnected", st.player.name));
         }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using GameLibrary.Cards;
-using GameLibrary.Games;
-using GameLibrary.Messages;
+using CardGameLibrary.Cards;
+using CardGameLibrary.Games;
+using CardGameLibrary.Messages;
 
 namespace CardServer.Games
 {

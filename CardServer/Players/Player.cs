@@ -69,9 +69,9 @@ namespace CardServer.Players
         /// Provides the game player instance for the given player
         /// </summary>
         /// <returns>An associated GamePlayer object</returns>
-        public GameLibrary.Games.GamePlayer GetGamePlayer()
+        public CardGameLibrary.Games.GamePlayer GetGamePlayer()
         {
-            return new GameLibrary.Games.GamePlayer(name: name);
+            return new CardGameLibrary.Games.GamePlayer(name: name);
         }
     }
 }

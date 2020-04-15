@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-
-using GameLibrary.Messages;
+using CardGameLibrary.Games;
+using CardGameLibrary.Messages;
 
 namespace CardServer
 {
@@ -13,7 +13,7 @@ namespace CardServer
             // Print output and setup parameters
             Console.WriteLine("Starting Card Game Server");
             Console.WriteLine("Enabling Message Printing");
-            GameLibrary.Network.MessageReader.SetOutputPrinting(true);
+            CardGameLibrary.Network.MessageReader.SetOutputPrinting(true);
 
             // Start the Server
             Server.Server server = new Server.Server(8088);
@@ -81,7 +81,7 @@ namespace CardServer
                                         current_id,
                                         new Games.GameLobby(
                                             game_id: current_id,
-                                            (GameLibrary.Games.GameTypes)req.data));
+                                            (GameTypes)req.data));
                                     server.AddMessageToQueue(p, lobbies[current_id].GetLobbyStatus());
                                     // Increment the game ID
                                     current_id += 1;
@@ -92,7 +92,7 @@ namespace CardServer
                                     {
                                         lobbies[req.game_id].JoinLobby(
                                             player: p.GetGamePlayer(),
-                                            pos: (GameLibrary.Games.LobbyPositions)req.data);
+                                            pos: (LobbyPositions)req.data);
                                         server.AddMessageToQueue(p, lobbies[req.game_id].GetLobbyStatus());
                                     }
                                     break;
@@ -121,7 +121,7 @@ namespace CardServer
                                     msg: play);
 
                                 // Send a server response to each player in the game
-                                foreach (GameLibrary.Games.GamePlayer gplayer in games[play.game_id].players)
+                                foreach (GamePlayer gplayer in games[play.game_id].players)
                                 {
                                     server.AddMessageToQueue(
                                         gplayer,
