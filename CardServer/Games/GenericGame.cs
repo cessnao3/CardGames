@@ -100,6 +100,31 @@ namespace CardServer.Games
         protected abstract void SetupNewRound();
 
         /// <summary>
+        /// Deals the deck to the players
+        /// </summary>
+        protected void ShuffleAndDeal()
+        {
+            // Clear player hands
+            foreach (GamePlayer p in players) hands[p].Clear();
+
+            // Shuffle the deck and deal to each player
+            deck.Shuffle();
+            while (deck.HasNext())
+            {
+                foreach (GamePlayer p in players)
+                {
+                    hands[p].AddCard(deck.Next());
+                }
+            }
+
+            // Sort the resulting player hands
+            foreach (Hand h in hands.Values)
+            {
+                h.Sort();
+            }
+        }
+
+        /// <summary>
         /// Perform a player action
         /// </summary>
         /// <param name="p">The player requesting the action</param>

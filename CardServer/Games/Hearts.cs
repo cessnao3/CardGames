@@ -8,7 +8,7 @@ using CardGameLibrary.Messages;
 namespace CardServer.Games
 {
     /// <summary>
-    /// Defines the hearts-specific parameters for the Hearts game
+    /// Defines hearts-specific logic
     /// </summary>
     public class Hearts : GenericGame
     {
@@ -116,24 +116,8 @@ namespace CardServer.Games
         /// </summary>
         protected override void SetupNewRound()
         {
-            // Clear player hands
-            foreach (GamePlayer p in players) hands[p].Clear();
-
-            // Shuffle the deck and deal to each player
-            deck.Shuffle();
-            while (deck.HasNext())
-            {
-                foreach (GamePlayer p in players)
-                {
-                    hands[p].AddCard(deck.Next());
-                }
-            }
-
-            // Sort the resulting player hands
-            foreach (Hand h in hands.Values)
-            {
-                h.Sort();
-            }
+            // Deal out the next hand
+            ShuffleAndDeal();
 
             // Setup the game state for the next round
             pass_round_complete = CurrentPassDirection() == PassDirection.None;
@@ -436,6 +420,12 @@ namespace CardServer.Games
                     // Remove the played card
                     h.PlayCard(msg.card);
                     passing_cards[p].Add(msg.card);
+
+                    // Clear the center cards if not already cleared
+                    if (center_pool.Count > 0)
+                    {
+                        center_pool.Clear();
+                    }
                 }
 
                 // Determine if we can complete the passing round
