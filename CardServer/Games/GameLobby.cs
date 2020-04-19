@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using CardGameLibrary.Games;
+using CardGameLibrary.GameParameters;
 using CardGameLibrary.Messages;
 
 namespace CardServer.Games
@@ -19,12 +19,12 @@ namespace CardServer.Games
         /// <summary>
         /// Provides the game type of the lobby for creating a new game
         /// </summary>
-        GameTypes game_type;
+        public GameTypes game_type { get; protected set; }
 
         /// <summary>
         /// Defines the game ID that the game will take when created
         /// </summary>
-        int game_id;
+        public int game_id { get; protected set; }
 
         /// <summary>
         /// Determines the date time of the game for eventual timeout if a game isn't started
@@ -61,7 +61,7 @@ namespace CardServer.Games
             // Return nothing if the lobby isn't ready
             if (!LobbyReady())
             {
-                return null;
+                throw new GameException(game_id, "Lobby isn't ready to create the game");
             }
             // Otherwise, attempt to create the game
             else
@@ -74,8 +74,18 @@ namespace CardServer.Games
                         return new Hearts(
                             game_id: game_id,
                             players: lobby_players.ToArray());
+                    case GameTypes.Euchre:
+                        return new Euchre(
+                            game_id: game_id,
+                            players: lobby_players.ToArray());
                     default:
-                        return null;
+                        throw new GameException(
+                            game_id,
+                            string.Format(
+                                "Cannot convert lobby to game for {0:}",
+                                Enum.GetName(
+                                    enumType: typeof(GameTypes),
+                                    value: game_type)));
                 }
             }
         }
@@ -97,6 +107,20 @@ namespace CardServer.Games
                 }
             }
             return lobby_ready;
+        }
+
+        /// <summary>
+        /// Checks if the lobby is empty or not
+        /// </summary>
+        /// <returns>True if the lobby is empty and all players are unset</returns>
+        public bool IsEmpty()
+        {
+            // Iterate over each player to see if any are not null/set
+            foreach (GamePlayer p in lobby_players)
+            {
+                if (p != null) return false;
+            }
+            return true;
         }
 
         /// <summary>

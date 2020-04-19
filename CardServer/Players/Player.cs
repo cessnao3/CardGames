@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using CardGameLibrary.GameParameters;
 
 namespace CardServer.Players
 {
@@ -69,9 +70,9 @@ namespace CardServer.Players
         /// Provides the game player instance for the given player
         /// </summary>
         /// <returns>An associated GamePlayer object</returns>
-        public CardGameLibrary.Games.GamePlayer GetGamePlayer()
+        public GamePlayer GetGamePlayer()
         {
-            return new CardGameLibrary.Games.GamePlayer(name: name);
+            return new GamePlayer(name: name);
         }
     }
 }

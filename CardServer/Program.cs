@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using CardGameLibrary.Games;
+using CardGameLibrary.GameParameters;
 using CardGameLibrary.Messages;
+using CardServer.Games;
 
 namespace CardServer
 {
@@ -19,10 +20,10 @@ namespace CardServer
             Server.Server server = new Server.Server(8088);
 
             // Setup the games and lobbies lists
-            Dictionary<int, Games.GameLobby> lobbies = new Dictionary<int, Games.GameLobby>();
-            Dictionary<int, Games.GenericGame> games = new Dictionary<int, Games.GenericGame>();
+            Dictionary<int, GameLobby> lobbies = new Dictionary<int, GameLobby>();
+            Dictionary<int, GenericGame> games = new Dictionary<int, GenericGame>();
 
-            // Setup a temporary game
+            // Setup the starting ID
             int current_id = 0;
 
             while (true)
@@ -49,25 +50,46 @@ namespace CardServer
                             switch (req.request)
                             {
                                 case MsgClientRequest.RequestType.GameStatus:
-                                    if (games.ContainsKey(req.game_id)) server.AddMessageToQueue(p, games[req.game_id].GetGameStatus());
+                                    if (games.ContainsKey(req.game_id))
+                                    {
+                                        server.AddMessageToQueue(
+                                            p,
+                                            games[req.game_id].GetGameStatus(player: p.GetGamePlayer()));
+                                    }
                                     break;
                                 case MsgClientRequest.RequestType.AvailableGames:
                                     {
                                         // Create a list of only the games that the player is part of
-                                        List<int> player_games = new List<int>();
+                                        List<MsgGameList.ListItem> player_games = new List<MsgGameList.ListItem>();
 
-                                        foreach (Games.GenericGame g in games.Values)
+                                        foreach (GenericGame g in games.Values)
                                         {
-                                            if (g.ContainsPlayer(p.GetGamePlayer()))
+                                            if (g.IsActive() && g.ContainsPlayer(p.GetGamePlayer()))
                                             {
-                                                player_games.Add(g.game_id);
+                                                player_games.Add(new MsgGameList.ListItem()
+                                                {
+                                                    id_val = g.game_id,
+                                                    game_type = (int)g.GetGameType()
+                                                });
                                             }
+                                        }
+
+                                        // Define the lobby items
+                                        List<MsgGameList.ListItem> player_lobbies = new List<MsgGameList.ListItem>();
+
+                                        foreach (GameLobby l in lobbies.Values)
+                                        {
+                                            player_lobbies.Add(new MsgGameList.ListItem()
+                                            {
+                                                id_val = l.game_id,
+                                                game_type = (int)l.game_type
+                                            });
                                         }
 
                                         // Add the message to the send queue
                                         server.AddMessageToQueue(p, new MsgGameList()
                                         {
-                                            lobbies = new List<int>(lobbies.Keys),
+                                            lobbies = player_lobbies,
                                             games = player_games
                                         });
                                     }
@@ -76,15 +98,31 @@ namespace CardServer
                                     if (lobbies.ContainsKey(req.game_id)) server.AddMessageToQueue(p, lobbies[req.game_id].GetLobbyStatus());
                                     break;
                                 case MsgClientRequest.RequestType.NewLobby:
-                                    // Add a lobby, and send the lobby status back to the player
-                                    lobbies.Add(
-                                        current_id,
-                                        new Games.GameLobby(
-                                            game_id: current_id,
-                                            (GameTypes)req.data));
-                                    server.AddMessageToQueue(p, lobbies[current_id].GetLobbyStatus());
-                                    // Increment the game ID
-                                    current_id += 1;
+                                    {
+                                        // Check if an empty lobby of the requested game type already exists
+                                        bool empty_lobby_exists = false;
+
+                                        foreach (GameLobby l in lobbies.Values)
+                                        {
+                                            if (l.IsEmpty() && l.game_type == (GameTypes)req.data)
+                                            {
+                                                empty_lobby_exists = true;
+                                            }
+                                        }
+
+                                        // Add a lobby, and send the lobby status back to the player, if one doesn't already exist
+                                        if (!empty_lobby_exists)
+                                        {
+                                            lobbies.Add(
+                                                current_id,
+                                                new GameLobby(
+                                                    game_id: current_id,
+                                                    (GameTypes)req.data));
+                                            server.AddMessageToQueue(p, lobbies[current_id].GetLobbyStatus());
+                                            // Increment the game ID
+                                            current_id += 1;
+                                        }
+                                    }
                                     break;
                                 case MsgClientRequest.RequestType.JoinLobby:
                                     // Request to join the lobby if the game ID exists, and send a lobby status as a response
@@ -116,16 +154,23 @@ namespace CardServer
                             if (games.ContainsKey(play.game_id) && play.player.Equals(p.GetGamePlayer()))
                             {
                                 // Call the action item on the given game
-                                games[play.game_id].Action(
-                                    p: p.GetGamePlayer(),
-                                    msg: play);
+                                try
+                                {
+                                    games[play.game_id].Action(
+                                        p: p.GetGamePlayer(),
+                                        msg: play);
+                                }
+                                catch (GameException e)
+                                {
+                                    Console.WriteLine(e.Message);
+                                }
 
                                 // Send a server response to each player in the game
                                 foreach (GamePlayer gplayer in games[play.game_id].players)
                                 {
                                     server.AddMessageToQueue(
                                         gplayer,
-                                        games[play.game_id].GetGameStatus());
+                                        games[play.game_id].GetGameStatus(gplayer));
                                 }
                             }
                         }
@@ -139,9 +184,23 @@ namespace CardServer
                     // Convert any lobbies that are ready into games
                     if (lobbies[l_id].LobbyReady())
                     {
-                        games.Add(
-                            l_id,
-                            lobbies[l_id].CreateGame());
+                        Games.GenericGame game = null;
+
+                        try
+                        {
+                            game = lobbies[l_id].CreateGame();
+                        }
+                        catch (GameException e)
+                        {
+                            Console.WriteLine(e.Message);
+                        }
+
+                        if (game != null)
+                        {
+                            games.Add(
+                                l_id,
+                                game);
+                        }
                         lobbies.Remove(l_id);
                     }
                     // Remove any lobbies that have timed out

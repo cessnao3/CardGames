@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using CardGameLibrary.Cards;
-using CardGameLibrary.Games;
+using CardGameLibrary.GameParameters;
 using CardGameLibrary.Messages;
 
 namespace CardServer.Games
@@ -48,14 +48,26 @@ namespace CardServer.Games
         protected int round = 0;
 
         /// <summary>
-        /// Stores the center pool of cards to use
+        /// Stores the center pool of played cards
         /// </summary>
-        protected Dictionary<GamePlayer, Card> center_pool;
+        protected Dictionary<GamePlayer, Card> played_cards;
+
+        /// <summary>
+        /// Provides the cards that should be visible to all players
+        /// </summary>
+        protected List<Card> center_cards;
 
         /// <summary>
         /// Determines when the last game status update was sent out
         /// </summary>
         DateTime last_update_sent = DateTime.UtcNow;
+
+        /// <summary>
+        /// Defines the maximum number of cards to deal to the players
+        /// If 0 or negative, will deal the maximum number of cards until
+        /// the deck is empty
+        /// </summary>
+        protected int card_deal_limit = 0;
 
         /// <summary>
         /// Constructs the generic game class
@@ -67,6 +79,12 @@ namespace CardServer.Games
             // Store the game ID
             this.game_id = game_id;
 
+            // Check the number of players
+            if (players == null || players.Length != 4)
+            {
+                throw new GameException(game_id, "Must provide four players to game");
+            }
+
             // Loop through each player to ensure that there are no duplicates
             for (int i = 0; i < players.Length; ++i)
             {
@@ -74,7 +92,7 @@ namespace CardServer.Games
                 {
                     if (players[i] == players[j])
                     {
-                        throw new ArgumentException("Cannot have duplicate players in the same game");
+                        throw new GameException(game_id, "Cannot have duplicate players in the same game");
                     }
                 }
             }
@@ -83,9 +101,10 @@ namespace CardServer.Games
             this.players = players;
 
             // Initialize the game states
-            center_pool = new Dictionary<GamePlayer, Card>();
+            played_cards = new Dictionary<GamePlayer, Card>();
             scores = new Dictionary<GamePlayer, List<int>>();
             hands = new Dictionary<GamePlayer, Hand>();
+            center_cards = new List<Card>();
 
             foreach (GamePlayer p in this.players)
             {
@@ -102,19 +121,27 @@ namespace CardServer.Games
         /// <summary>
         /// Deals the deck to the players
         /// </summary>
-        protected void ShuffleAndDeal()
+        protected virtual void ShuffleAndDeal()
         {
             // Clear player hands
             foreach (GamePlayer p in players) hands[p].Clear();
 
             // Shuffle the deck and deal to each player
             deck.Shuffle();
+            int card_count = 0;
             while (deck.HasNext())
             {
+                // Add a card to each player
                 foreach (GamePlayer p in players)
                 {
                     hands[p].AddCard(deck.Next());
                 }
+
+                // Increment the card count
+                card_count += 1;
+
+                // Stop dealing if we have reached the card limit
+                if (card_deal_limit > 0 && card_count >= card_deal_limit) break;
             }
 
             // Sort the resulting player hands
@@ -174,7 +201,7 @@ namespace CardServer.Games
         /// <summary>
         /// Increments the player index to the default next player
         /// </summary>
-        public void IncrementPlayer()
+        public virtual void IncrementPlayer()
         {
             current_player_ind = (current_player_ind + 1) % players.Length;
         }
@@ -194,7 +221,7 @@ namespace CardServer.Games
                 }
             }
 
-            throw new ArgumentException("Cannot set player who isn't in the game");
+            throw new GameException(game_id, "Cannot set player who isn't in the game");
         }
 
         /// <summary>
@@ -222,10 +249,17 @@ namespace CardServer.Games
         }
 
         /// <summary>
+        /// Provides the current game type
+        /// </summary>
+        /// <returns>The game type for the associated game</returns>
+        public abstract GameTypes GetGameType();
+
+        /// <summary>
         /// Provides the current game status
         /// </summary>
+        /// <param name="player">The player to get the current status for</param>
         /// <returns>The game status provided in a message that can be sent over the network</returns>
-        virtual public MsgGameStatus GetGameStatus()
+        virtual public MsgGameStatus GetGameStatus(GamePlayer player)
         {
             last_update_sent = DateTime.UtcNow;
 
@@ -237,7 +271,7 @@ namespace CardServer.Games
             {
                 player_hands.Add(hands[p]);
 
-                if (center_pool.ContainsKey(p)) pool_values.Add(center_pool[p]);
+                if (played_cards.ContainsKey(p)) pool_values.Add(played_cards[p]);
                 else pool_values.Add(null);
 
                 player_scores.Add(OverallScores()[p]);
@@ -250,8 +284,10 @@ namespace CardServer.Games
                 current_game_status = string.Empty,
                 current_player = current_player_ind,
                 game_id = game_id,
+                game_type = (int)GetGameType(),
                 scores = player_scores,
-                center_pool = pool_values
+                played_cards_by_player = pool_values,
+                center_action_cards = center_cards
             };
 
             return status_val;

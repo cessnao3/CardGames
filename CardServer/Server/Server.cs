@@ -251,7 +251,7 @@ namespace CardServer.Server
         /// </summary>
         /// <param name="player">The player to add the message for</param>
         /// <param name="msg">The message to add to the queue</param>
-        public void AddMessageToQueue(CardGameLibrary.Games.GamePlayer gplayer, MsgBase msg)
+        public void AddMessageToQueue(CardGameLibrary.GameParameters.GamePlayer gplayer, MsgBase msg)
         {
             Players.Player p = Players.PlayerDatabase.GetInstance().GetPlayerForName(gplayer.name);
 
@@ -263,8 +263,10 @@ namespace CardServer.Server
             }
         }
 
-
-
+        /// <summary>
+        /// Provides the received messages dictionary since the last tick
+        /// </summary>
+        /// <returns>The received message dictionary</returns>
         public Dictionary<Players.Player, List<MsgBase>> GetReceivedMessages()
         {
             return message_receive_queue;
