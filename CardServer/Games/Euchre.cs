@@ -15,27 +15,57 @@ namespace CardServer.Games
     /// </summary>
     public class Euchre : GenericTrickGame
     {
+        /// <summary>
+        /// Defines the trump suit
+        /// </summary>
         Card.Suit trump;
+
+        /// <summary>
+        /// Defines the value that is used for the bowers
+        /// </summary>
         static readonly Card.Value bower_value = Card.Value.Jack;
 
+        /// <summary>
+        /// Defines the skip index that is used when a player is going alone
+        /// </summary>
         int going_alone_skip_ind = -1;
 
+        /// <summary>
+        /// Determines if the bidding round has been completed
+        /// </summary>
         bool bidding_complete;
+
+        /// <summary>
+        /// Determines if the first round of bidding has been complted
+        /// </summary>
         bool first_bid_round_complete;
+
+        /// <summary>
+        /// Determines which player called up trump
+        /// </summary>
         GamePlayer bidding_player;
 
+        /// <summary>
+        /// Boolean to allow for screwing the dealer
+        /// </summary>
         bool screw_the_dealer = true;
 
+        /// <summary>
+        /// Property to determine whether trump has been selected
+        /// </summary>
         bool TrumpSelected
         {
-            get
-            {
-                return bidding_player != null;
-            }
+            get { return bidding_player != null; }
         }
 
-        Dictionary<GamePlayer, int> tricks_taken;
+        /// <summary>
+        /// Storage location to determine the number of tricks taken by each player
+        /// </summary>
+        Dictionary<GamePlayer, int> tricks_taken = new Dictionary<GamePlayer, int>();
 
+        /// <summary>
+        /// Determines the kitty card that is shown to all players for trump selection
+        /// </summary>
         Card kitty_card = null;
 
         /// <summary>
@@ -229,7 +259,7 @@ namespace CardServer.Games
             trump = Card.Suit.Club;
 
             // Reset tricks so far
-            tricks_taken = new Dictionary<GamePlayer, int>();
+            tricks_taken.Clear();
             foreach (GamePlayer p in players)
             {
                 tricks_taken.Add(p, 0);
