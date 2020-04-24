@@ -600,7 +600,7 @@ namespace CardServer.Games
                         }
                         else
                         {
-                            points_to_add = 5;
+                            points_to_add = 4;
                         }
                     }
                     else
