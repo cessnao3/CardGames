@@ -4,8 +4,13 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Security.Cryptography;
 using CardGameLibrary.Network;
 using CardGameLibrary.Messages;
+
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
+using System.IO;
 
 namespace CardServer.Server
 {
@@ -23,6 +28,8 @@ namespace CardServer.Server
             public ClientStruct client_struct = null;
             public DateTime last_receive = DateTime.UtcNow;
         };
+
+        X509Certificate2 server_certificate = null;
 
         /// <summary>
         /// Defines the dictionary to store client parameters with clients
@@ -48,13 +55,36 @@ namespace CardServer.Server
         /// Creates the server to listen on the specified port
         /// </summary>
         /// <param name="port">The port to listen to message on</param>
-        public Server(int port)
+        /// <param name="cert_file">The certificate file to load to utilize SSL (optional)</param>
+        public Server(int port, string cert_file=null)
         {
             // Setup the socket listener
             server_socket = new TcpListener(
                 IPAddress.Any,
                 port);
             server_socket.Start();
+
+            // Load the certificate file
+            if (cert_file != null && cert_file.Length > 0)
+            {
+                try
+                {
+                    server_certificate = new X509Certificate2(cert_file);
+                }
+                catch (CryptographicException)
+                {
+                    server_certificate = null;
+                }
+
+                if (server_certificate == null)
+                {
+                    throw new ArgumentException("Unable to create certificate from provided file");
+                }
+                else
+                {
+                    Console.WriteLine("Starting server with certificate " + cert_file);
+                }
+            }
         }
 
         /// <summary>
@@ -72,6 +102,36 @@ namespace CardServer.Server
                 // Define the client struct
                 ClientStruct client_struct = new ClientStruct(client);
 
+                // Authenticate as SSL stream if provided
+                if (server_certificate != null)
+                {
+                    // Create the SSL stream and attempt to authenticate
+                    SslStream ssl_stream = new SslStream(
+                        innerStream: client_struct.stream,
+                        leaveInnerStreamOpen: false);
+
+                    try
+                    {
+                        ssl_stream.AuthenticateAsServer(
+                            serverCertificate: server_certificate,
+                            clientCertificateRequired: false,
+                            checkCertificateRevocation: true);
+                    }
+                    catch (IOException)
+                    {
+                        // List as unable to authenticate client
+                        Console.WriteLine("Unable to authenticate client");
+
+                        // Close the connection if unable to authenticate
+                        ssl_stream.Close();
+                        client_struct.Close();
+                        continue;
+                    }
+
+                    // Replace the stream struct with the SSL stream
+                    client_struct.SetStream(ssl_stream);
+                }
+
                 // Read the response/init string from the network stream
                 MsgLogin msg = null;
                 int iter_lim = 0;
@@ -86,7 +146,7 @@ namespace CardServer.Server
                             msg = (MsgLogin)msg_base;
                         }
                     }
-                    catch (System.IO.IOException)
+                    catch (IOException)
                     {
                         // Pass
                     }
