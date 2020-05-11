@@ -183,6 +183,9 @@ namespace CardServer.Games
                 }
             }
 
+            // Reset the lead card
+            lead_card = null;
+
             // Set up the round point values
             if (winning_player != null)
             {
