@@ -12,12 +12,12 @@ namespace CardServer
         /// <summary>
         /// Defines the available lobbies
         /// </summary>
-        Dictionary<int, GameLobby> lobbies = new Dictionary<int, GameLobby>();
+        readonly Dictionary<int, GameLobby> lobbies = new Dictionary<int, GameLobby>();
 
         /// <summary>
         /// Defines teh available games
         /// </summary>
-        Dictionary<int, GenericGame> games = new Dictionary<int, GenericGame>();
+        readonly Dictionary<int, GenericGame> games = new Dictionary<int, GenericGame>();
 
         /// <summary>
         /// Defines the current ID of the games to provide
@@ -48,7 +48,7 @@ namespace CardServer
             catch (ArgumentException e)
             {
                 Console.WriteLine("Unable to start server due to '" + e.Message + "'");
-                throw e;
+                throw;
             }
         }
 
