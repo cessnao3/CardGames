@@ -15,12 +15,12 @@ namespace CardServer.Games
         /// <summary>
         /// Stores the game ID
         /// </summary>
-        public int game_id { get; protected set; }
+        public int GameID { get; protected set; }
 
         /// <summary>
         /// Provides the players for the given game
         /// </summary>
-        public GamePlayer[] players { get; protected set; }
+        public GamePlayer[] Players { get; protected set; }
 
         /// <summary>
         /// Provides the deck of cards used in the game
@@ -77,7 +77,7 @@ namespace CardServer.Games
         public GenericGame(int game_id, GamePlayer[] players)
         {
             // Store the game ID
-            this.game_id = game_id;
+            this.GameID = game_id;
 
             // Check the number of players
             if (players == null || players.Length != 4)
@@ -98,7 +98,7 @@ namespace CardServer.Games
             }
 
             // Save the players
-            this.players = players;
+            this.Players = players;
 
             // Initialize the game states
             played_cards = new Dictionary<GamePlayer, Card>();
@@ -106,7 +106,7 @@ namespace CardServer.Games
             hands = new Dictionary<GamePlayer, Hand>();
             center_cards = new List<Card>();
 
-            foreach (GamePlayer p in this.players)
+            foreach (GamePlayer p in this.Players)
             {
                 scores.Add(p, new List<int>());
                 hands.Add(p, new Hand());
@@ -124,7 +124,7 @@ namespace CardServer.Games
         protected virtual void ShuffleAndDeal()
         {
             // Clear player hands
-            foreach (GamePlayer p in players) hands[p].Clear();
+            foreach (GamePlayer p in Players) hands[p].Clear();
 
             // Shuffle the deck and deal to each player
             deck.Shuffle();
@@ -132,7 +132,7 @@ namespace CardServer.Games
             while (deck.HasNext())
             {
                 // Add a card to each player
-                foreach (GamePlayer p in players)
+                foreach (GamePlayer p in Players)
                 {
                     hands[p].AddCard(deck.Next());
                 }
@@ -177,7 +177,7 @@ namespace CardServer.Games
         /// <returns>The player associated with the current player index</returns>
         public GamePlayer CurrentPlayer()
         {
-            return players[current_player_ind];
+            return Players[current_player_ind];
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace CardServer.Games
         /// <returns>True if the player is part of the game</returns>
         public bool ContainsPlayer(GamePlayer player)
         {
-            foreach (GamePlayer p in players)
+            foreach (GamePlayer p in Players)
             {
                 if (p.Equals(player))
                 {
@@ -203,7 +203,7 @@ namespace CardServer.Games
         /// </summary>
         public virtual void IncrementPlayer()
         {
-            current_player_ind = (current_player_ind + 1) % players.Length;
+            current_player_ind = (current_player_ind + 1) % Players.Length;
         }
 
         /// <summary>
@@ -212,16 +212,16 @@ namespace CardServer.Games
         /// <param name="p">The new player to set as the current player index</param>
         protected void SetCurrentPlayer(GamePlayer p)
         {
-            for (int i = 0; i < players.Length; ++i)
+            for (int i = 0; i < Players.Length; ++i)
             {
-                if (players[i].Equals(p))
+                if (Players[i].Equals(p))
                 {
                     current_player_ind = i;
                     return;
                 }
             }
 
-            throw new GameException(game_id, "Cannot set player who isn't in the game");
+            throw new GameException(GameID, "Cannot set player who isn't in the game");
         }
 
         /// <summary>
@@ -234,7 +234,7 @@ namespace CardServer.Games
             Dictionary<GamePlayer, int> overall_scores = new Dictionary<GamePlayer, int>();
 
             // Loop through each player to add each round score to the overall score
-            foreach (GamePlayer p in players)
+            foreach (GamePlayer p in Players)
             {
                 overall_scores[p] = 0;
 
@@ -267,7 +267,7 @@ namespace CardServer.Games
             List<Card> pool_values = new List<Card>();
             List<int> player_scores = new List<int>();
 
-            foreach (GamePlayer p in players)
+            foreach (GamePlayer p in Players)
             {
                 player_hands.Add(hands[p]);
 
@@ -279,15 +279,15 @@ namespace CardServer.Games
 
             MsgGameStatus status_val = new MsgGameStatus()
             {
-                players = new List<GamePlayer>(players),
-                hands = player_hands,
-                current_game_status = string.Empty,
-                current_player = current_player_ind,
-                game_id = game_id,
-                game_type = (int)GetGameType(),
-                scores = player_scores,
-                played_cards_by_player = pool_values,
-                center_action_cards = center_cards
+                Players = new List<GamePlayer>(Players),
+                Hands = player_hands,
+                CurrentGameStatus = string.Empty,
+                CurrentPlayer = current_player_ind,
+                GameID = GameID,
+                GameType = (int)GetGameType(),
+                Scores = player_scores,
+                PlayedCardsByPlayer = pool_values,
+                CenterActionCards = center_cards
             };
 
             return status_val;

@@ -53,7 +53,7 @@ namespace CardServer.Games
         protected virtual void FinishTrick()
         {
             // Skip if the center pool isn't full
-            if (!TrickCanBeCompleted()) throw new GameException(game_id, "Trick unable to be finished");
+            if (!TrickCanBeCompleted()) throw new GameException(GameID, "Trick unable to be finished");
 
             // Increment the trick count
             trick_count += 1;
@@ -65,7 +65,7 @@ namespace CardServer.Games
         /// <returns>Returns the number of cards expected in a trick</returns>
         virtual protected int CountCenterCardExpected()
         {
-            return players.Length;
+            return Players.Length;
         }
 
         /// <summary>
@@ -116,16 +116,16 @@ namespace CardServer.Games
         {
             // Determine the base class game status
             MsgGameStatus msg = base.GetGameStatus(player: player);
-            msg.current_game_status = GetGameStatusMsg();
+            msg.CurrentGameStatus = GetGameStatusMsg();
 
             // Determine if the trick message should be appended
             if (CanShowTrickMessage() &&
                 trick_msg != null &&
                 trick_msg.Length > 0)
             {
-                msg.current_game_status = string.Format(
+                msg.CurrentGameStatus = string.Format(
                     "{0:} - {1:}",
-                    msg.current_game_status,
+                    msg.CurrentGameStatus,
                     trick_msg);
             }
 

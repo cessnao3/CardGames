@@ -29,27 +29,30 @@ namespace CardServer.Server
             public DateTime last_receive = DateTime.UtcNow;
         };
 
-        X509Certificate2 server_certificate = null;
+        /// <summary>
+        /// Defines the server certificate that will be used
+        /// </summary>
+        readonly X509Certificate2 server_certificate = null;
 
         /// <summary>
         /// Defines the dictionary to store client parameters with clients
         /// </summary>
-        Dictionary<Players.Player, ServerTuple> clients = new Dictionary<Players.Player, ServerTuple>();
+        readonly Dictionary<Players.Player, ServerTuple> clients = new Dictionary<Players.Player, ServerTuple>();
 
         /// <summary>
         /// Defines the message queue list that the server has received from clients
         /// </summary>
-        Dictionary<Players.Player, List<MsgBase>> message_receive_queue = new Dictionary<Players.Player, List<MsgBase>>();
+        readonly Dictionary<Players.Player, List<MsgBase>> message_receive_queue = new Dictionary<Players.Player, List<MsgBase>>();
 
         /// <summary>
         /// Defines the message queue list for the server to send
         /// </summary>
-        Dictionary<Players.Player, List<MsgBase>> message_send_queue = new Dictionary<Players.Player, List<MsgBase>>();
+        readonly Dictionary<Players.Player, List<MsgBase>> message_send_queue = new Dictionary<Players.Player, List<MsgBase>>();
 
         /// <summary>
         /// Defines the server socket to use
         /// </summary>
-        TcpListener server_socket;
+        readonly TcpListener server_socket;
 
         /// <summary>
         /// Creates the server to listen on the specified port
@@ -141,9 +144,9 @@ namespace CardServer.Server
                     {
                         MsgBase msg_base = MessageReader.ReadMessage(client_struct);
 
-                        if (msg_base is MsgLogin)
+                        if (msg_base is MsgLogin msg_login)
                         {
-                            msg = (MsgLogin)msg_base;
+                            msg = msg_login;
                         }
                     }
                     catch (IOException)
@@ -162,11 +165,11 @@ namespace CardServer.Server
                 if (msg != null && msg.CheckMessage())
                 {
                     // Create the new user if requested
-                    if (msg.action == MsgLogin.ActionType.NewUser)
+                    if (msg.Action == MsgLogin.ActionType.NewUser)
                     {
                         if (!Players.PlayerDatabase.GetInstance().CreateNewPlayer(
-                            name: msg.username,
-                            hash: msg.password_hash))
+                            name: msg.Username,
+                            hash: msg.PasswordHash))
                         {
                             // Close the connection on failure
                             client.Close();
@@ -176,8 +179,8 @@ namespace CardServer.Server
 
                     // Get the player object from the dictionary
                     player_obj = Players.PlayerDatabase.GetInstance().CheckPlayerNameHash(
-                        username: msg.username,
-                        hash: msg.password_hash);
+                        username: msg.Username,
+                        hash: msg.PasswordHash);
                 }
 
                 // If the player object is found, setup the server tuple and add to the dictionary
@@ -199,8 +202,8 @@ namespace CardServer.Server
 
                     MessageReader.SendMessage(client_struct, new MsgServerResponse()
                     {
-                        code = ResponseCodes.OK,
-                        user = player_obj.GetGamePlayer()
+                        ResponseCode = ResponseCodes.OK,
+                        User = player_obj.GetGamePlayer()
                     });
 
                     Console.WriteLine(string.Format("User {0:s} connected", player_obj.name));

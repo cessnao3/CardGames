@@ -14,22 +14,22 @@ namespace CardServer.Games
         /// <summary>
         /// Stores the list of players present in the lobby
         /// </summary>
-        List<GamePlayer> lobby_players = new List<GamePlayer>();
+        readonly List<GamePlayer> lobby_players = new List<GamePlayer>();
 
         /// <summary>
         /// Provides the game type of the lobby for creating a new game
         /// </summary>
-        public GameTypes game_type { get; protected set; }
+        public GameTypes GameType { get; protected set; }
 
         /// <summary>
         /// Defines the game ID that the game will take when created
         /// </summary>
-        public int game_id { get; protected set; }
+        public int GameID { get; protected set; }
 
         /// <summary>
         /// Determines the date time of the game for eventual timeout if a game isn't started
         /// </summary>
-        DateTime create_time;
+        readonly DateTime create_time;
 
         /// <summary>
         /// Constructs a game lobby that will allow players to join/leave into different positions
@@ -39,8 +39,8 @@ namespace CardServer.Games
         public GameLobby(int game_id, GameTypes game_type)
         {
             // Set input parameters
-            this.game_id = game_id;
-            this.game_type = game_type;
+            this.GameID = game_id;
+            this.GameType = game_type;
 
             // Initialize the lobby players as initially empty
             for (int i = 0; i < 4; ++i)
@@ -61,32 +61,29 @@ namespace CardServer.Games
             // Return nothing if the lobby isn't ready
             if (!LobbyReady())
             {
-                throw new GameException(game_id, "Lobby isn't ready to create the game");
+                throw new GameException(GameID, "Lobby isn't ready to create the game");
             }
             // Otherwise, attempt to create the game
             else
             {
                 // Create the game based on the game type
                 // Otherwise, return null
-                switch (game_type)
+                return GameType switch
                 {
-                    case GameTypes.Hearts:
-                        return new Hearts(
-                            game_id: game_id,
-                            players: lobby_players.ToArray());
-                    case GameTypes.Euchre:
-                        return new Euchre(
-                            game_id: game_id,
-                            players: lobby_players.ToArray());
-                    default:
-                        throw new GameException(
-                            game_id,
-                            string.Format(
-                                "Cannot convert lobby to game for {0:}",
-                                Enum.GetName(
-                                    enumType: typeof(GameTypes),
-                                    value: game_type)));
-                }
+                    GameTypes.Hearts => new Hearts(
+                        game_id: GameID,
+                        players: lobby_players.ToArray()),
+                    GameTypes.Euchre => new Euchre(
+                        game_id: GameID,
+                        players: lobby_players.ToArray()),
+                    _ => throw new GameException(
+                        GameID,
+                        string.Format(
+                            "Cannot convert lobby to game for {0:}",
+                            Enum.GetName(
+                                enumType: typeof(GameTypes),
+                                value: GameType)))
+                };
             }
         }
 
@@ -173,10 +170,10 @@ namespace CardServer.Games
         {
             MsgLobbyStatus msg = new MsgLobbyStatus()
             {
-                game_id = game_id,
-                players = new List<GamePlayer>(lobby_players),
-                game_type = game_type,
-                lobby_ready = LobbyReady()
+                GameID = GameID,
+                Players = new List<GamePlayer>(lobby_players),
+                GameType = GameType,
+                LobbyReady = LobbyReady()
             };
             return msg;
         }

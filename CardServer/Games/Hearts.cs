@@ -40,12 +40,12 @@ namespace CardServer.Games
         /// <summary>
         /// Game state to store the individual round scores for players for the current round only
         /// </summary>
-        Dictionary<GamePlayer, int> round_scores = new Dictionary<GamePlayer, int>();
+        readonly Dictionary<GamePlayer, int> round_scores = new Dictionary<GamePlayer, int>();
 
         /// <summary>
         /// Game state to store the cards to be passed to the various players
         /// </summary>
-        Dictionary<GamePlayer, List<Card>> passing_cards = new Dictionary<GamePlayer, List<Card>>();
+        readonly Dictionary<GamePlayer, List<Card>> passing_cards = new Dictionary<GamePlayer, List<Card>>();
 
         /// <summary>
         /// Definition for the direction that cards should be passed
@@ -84,17 +84,13 @@ namespace CardServer.Games
         /// <returns>Provides the passing direction for the current round</returns>
         PassDirection CurrentPassDirection()
         {
-            switch (round % 4)
+            return (round % 4) switch
             {
-                case 0:
-                    return PassDirection.Left;
-                case 1:
-                    return PassDirection.Right;
-                case 2:
-                    return PassDirection.Across;
-                default:
-                    return PassDirection.None;
-            }
+                0 => PassDirection.Left,
+                1 => PassDirection.Right,
+                2 => PassDirection.Across,
+                _ => PassDirection.None
+            };
         }
 
         /// <summary>
@@ -112,7 +108,7 @@ namespace CardServer.Games
             // Setup each of the list game state parameter
             passing_cards.Clear();
             round_scores.Clear();
-            foreach (GamePlayer p in players)
+            foreach (GamePlayer p in Players)
             {
                 round_scores.Add(p, 0);
                 passing_cards.Add(p, new List<Card>());
@@ -134,7 +130,7 @@ namespace CardServer.Games
         /// </summary>
         void DetermineStartingPlayer()
         {
-            foreach (GamePlayer p in players)
+            foreach (GamePlayer p in Players)
             {
                 if (hands[p].HasCard(start_card))
                 {
@@ -194,7 +190,7 @@ namespace CardServer.Games
             }
             else
             {
-                throw new GameException(game_id, "Cannot determine winning player");
+                throw new GameException(GameID, "Cannot determine winning player");
             }
 
             // Finish the round if the round is complete
@@ -250,14 +246,14 @@ namespace CardServer.Games
         public override void Action(GamePlayer p, MsgGamePlay msg)
         {
             // Ensure that we are playing a card and the current hand contains the given card
-            if (!hands[p].cards.Contains(msg.card))
+            if (!hands[p].cards.Contains(msg.Card))
             {
                 throw new GameException(
-                    game_id,
+                    GameID,
                     string.Format(
                         "Player hand {0:} does not contain card {1:}",
                         p.name,
-                        msg.card.ToString()));
+                        msg.Card.ToString()));
             }
 
             // Play the hand if the passing round is complete
@@ -279,7 +275,7 @@ namespace CardServer.Games
                 if (lead_card == null)
                 {
                     // Check if trying to lead a heart before hearts has been broken
-                    if (msg.card.suit == Card.Suit.Heart &&
+                    if (msg.Card.suit == Card.Suit.Heart &&
                         !hearts_broken &&
                         (h.HasCardOfSuit(Card.Suit.Club) || h.HasCardOfSuit(Card.Suit.Diamond) || h.HasCardOfSuit(Card.Suit.Spade)))
                     {
@@ -290,7 +286,7 @@ namespace CardServer.Games
                 else
                 {
                     // Check if a player has a card of the lead suit before playing
-                    if (lead_card.suit != msg.card.suit &&
+                    if (lead_card.suit != msg.Card.suit &&
                         h.HasCardOfSuit(lead_card.suit))
                     {
                         card_valid = false;
@@ -302,15 +298,15 @@ namespace CardServer.Games
                 if (trick_count == 0)
                 {
                     // Check for the start card
-                    if (lead_card == null && !msg.card.Equals(start_card))
+                    if (lead_card == null && !msg.Card.Equals(start_card))
                     {
                         card_valid = false;
                         SetTrickMessage("Must lead the two of clubs");
                     }
 
                     // Check for the queen of spades or hearts on the first round
-                    if (msg.card.suit == Card.Suit.Heart ||
-                        msg.card.Equals(queen_spades))
+                    if (msg.Card.suit == Card.Suit.Heart ||
+                        msg.Card.Equals(queen_spades))
                     {
                         // Loop through to check if the player has another card they can play
                         bool has_another_card = false;
@@ -335,7 +331,7 @@ namespace CardServer.Games
                             SetTrickMessage("Cannot play points on the first trick");
                         }
                         // Player must play queen of spades if they have it
-                        else if (has_queen_of_spades && !msg.card.Equals(queen_spades))
+                        else if (has_queen_of_spades && !msg.Card.Equals(queen_spades))
                         {
                             card_valid = false;
                             SetTrickMessage("Must play the queen of spades");
@@ -349,7 +345,7 @@ namespace CardServer.Games
                     // Check if the lead card is valid
                     if (lead_card == null)
                     {
-                        lead_card = msg.card;
+                        lead_card = msg.Card;
                     }
 
                     // Clear the last trick
@@ -359,8 +355,8 @@ namespace CardServer.Games
                     }
 
                     // Play the respective card from the hands
-                    h.PlayCard(msg.card);
-                    played_cards.Add(p, msg.card);
+                    h.PlayCard(msg.Card);
+                    played_cards.Add(p, msg.Card);
 
                     // Set the next player, finishing the round if necessary
                     if (TrickCanBeCompleted())
@@ -386,8 +382,8 @@ namespace CardServer.Games
                     Hand h = hands[p];
 
                     // Remove the played card
-                    h.PlayCard(msg.card);
-                    passing_cards[p].Add(msg.card);
+                    h.PlayCard(msg.Card);
+                    passing_cards[p].Add(msg.Card);
 
                     // Clear the center cards if not already cleared
                     if (played_cards.Count > 0)
@@ -427,11 +423,11 @@ namespace CardServer.Games
                     }
 
                     // Loop through each of the players
-                    for (int i = 0; i < players.Length; ++i)
+                    for (int i = 0; i < Players.Length; ++i)
                     {
                         // Extract the to/from players for passing cards
-                        GamePlayer from_player = players[i];
-                        GamePlayer to_player = players[(i + modifier) % players.Length];
+                        GamePlayer from_player = Players[i];
+                        GamePlayer to_player = Players[(i + modifier) % Players.Length];
 
                         // Add each of the cards from the passing player to the receiving player's hand
                         foreach (Card c in passing_cards[from_player])
