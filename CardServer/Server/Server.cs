@@ -88,6 +88,9 @@ namespace CardServer.Server
                     Console.WriteLine("Starting server with certificate " + cert_file);
                 }
             }
+
+            // Print the database file
+            Console.WriteLine(string.Format("Using {0:} as user database", Players.PlayerDatabase.GetInstance().GetDatabaseFilename()));
         }
 
         /// <summary>

@@ -36,6 +36,15 @@ namespace CardServer.Players
         }
 
         /// <summary>
+        /// Provides the current database filename
+        /// </summary>
+        /// <returns>the current database filename</returns>
+        public string GetDatabaseFilename()
+        {
+            return db_fname;
+        }
+
+        /// <summary>
         /// Saves the database to the provided file if not null
         /// </summary>
         private void SaveDatabase()
