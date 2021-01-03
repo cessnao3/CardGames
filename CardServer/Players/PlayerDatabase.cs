@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.IO;
 
 namespace CardServer.Players
 {
@@ -71,7 +72,7 @@ namespace CardServer.Players
         /// <summary>
         /// The static database instance for the current executable to utilize
         /// </summary>
-        private static PlayerDatabase db = new PlayerDatabase(db_fname: "users.json");
+        private static PlayerDatabase db = new PlayerDatabase(db_fname: Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "users.json"));
 
         /// <summary>
         /// Returns the player database isntance to utilize
