@@ -81,7 +81,16 @@ namespace CardServer.Players
         /// <summary>
         /// The static database instance for the current executable to utilize
         /// </summary>
-        private static PlayerDatabase db = new PlayerDatabase(db_fname: Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "users.json"));
+        private static PlayerDatabase db;
+
+        /// <summary>
+        /// Initializes the database with the provided database filename
+        /// </summary>
+        /// <param name="db_fname">the filename to use, or null if none</param>
+        public static void InitDatabase(string db_fname)
+        {
+            db = new PlayerDatabase(db_fname: db_fname);
+        }
 
         /// <summary>
         /// Returns the player database isntance to utilize

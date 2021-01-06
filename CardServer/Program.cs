@@ -264,6 +264,9 @@ namespace CardServer
             string cert_file = null;
             bool provide_help = false;
 
+            // Define the user file
+            string user_database_file = null;
+
             // Read in the arguments
             for (int i = 0; i < args.Length; ++i)
             {
@@ -272,6 +275,17 @@ namespace CardServer
                     if (i + 1 < args.Length)
                     {
                         cert_file = args[++i];
+                    }
+                    else
+                    {
+                        provide_help = true;
+                    }
+                }
+                else if (args[i].Equals("-d"))
+                {
+                    if (i + 1 < args.Length)
+                    {
+                        user_database_file = args[++i];
                     }
                     else
                     {
@@ -297,9 +311,13 @@ namespace CardServer
                 Console.WriteLine("  Usage: [-c CertFile] [-h/--help]");
                 Console.WriteLine("    -c  Allows the server to be run with a SSL certificate,");
                 Console.WriteLine("        provided in CertFile, to encrypt connections");
+                Console.WriteLine("    -d  Allows the server to be run with a user database file");
                 Console.WriteLine("    -h  Prints this help message");
                 return;
             }
+
+            // Initialize the database
+            Players.PlayerDatabase.InitDatabase(db_fname: user_database_file);
 
             // Defines the program class
             Program prog;

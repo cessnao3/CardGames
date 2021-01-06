@@ -90,7 +90,14 @@ namespace CardServer.Server
             }
 
             // Print the database file
-            Console.WriteLine(string.Format("Using {0:} as user database", Players.PlayerDatabase.GetInstance().GetDatabaseFilename()));
+            if (Players.PlayerDatabase.GetInstance().GetDatabaseFilename() != null)
+            {
+                Console.WriteLine(string.Format("Using {0:} as user database", Players.PlayerDatabase.GetInstance().GetDatabaseFilename()));
+            }
+            else
+            {
+                Console.WriteLine("No user file provided");
+            }
         }
 
         /// <summary>
