@@ -1,3 +1,3 @@
 [submodule "CardGameLibrary"]
 	path = CardGameLibrary
-	url = git@github.com:cessnao3/CardGameLibrary.git
+	url = ../CardGameLibrary.git
