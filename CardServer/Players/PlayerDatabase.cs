@@ -13,23 +13,23 @@ namespace CardServer.Players
         /// <summary>
         /// The raw player database dictionary
         /// </summary>
-        Dictionary<string, Player> database;
+        Dictionary<string, Player> Database { get; set; }
 
         /// <summary>
         /// An optional filename to save users to as a json structure
         /// </summary>
-        string db_fname;
+        string? DatabaseFileName { get; }
 
         /// <summary>
         /// Default player database constructor, with optional database filename to save
         /// data for persistency between server starts
         /// </summary>
         /// <param name="db_fname"></param>
-        protected PlayerDatabase(string db_fname=null)
+        protected PlayerDatabase(string? db_fname = null)
         {
             // Initialize the database and set the filename
-            database = new Dictionary<string, Player>();
-            this.db_fname = db_fname;
+            Database = new();
+            DatabaseFileName = db_fname;
 
             // Load the database
             LoadDatabase();
@@ -39,9 +39,9 @@ namespace CardServer.Players
         /// Provides the current database filename
         /// </summary>
         /// <returns>the current database filename</returns>
-        public string GetDatabaseFilename()
+        public string? GetDatabaseFilename()
         {
-            return db_fname;
+            return DatabaseFileName;
         }
 
         /// <summary>
@@ -49,11 +49,10 @@ namespace CardServer.Players
         /// </summary>
         private void SaveDatabase()
         {
-            if (db_fname != null)
+            if (!string.IsNullOrWhiteSpace(DatabaseFileName))
             {
-                System.IO.StreamWriter json_writer = new System.IO.StreamWriter(db_fname);
-                json_writer.Write(JsonSerializer.Serialize(database, database.GetType()));
-                json_writer.Close();
+                using StreamWriter json_writer = new(DatabaseFileName);
+                json_writer.Write(JsonSerializer.Serialize(Database, Database.GetType()));
             }
         }
 
@@ -62,16 +61,15 @@ namespace CardServer.Players
         /// </summary>
         private void LoadDatabase()
         {
-            if (db_fname != null)
+            if (DatabaseFileName != null)
             {
                 try
                 {
-                    System.IO.StreamReader json_reader = new System.IO.StreamReader(db_fname);
+                    using StreamReader json_reader = new(DatabaseFileName);
                     string data = json_reader.ReadToEnd();
-                    database = (Dictionary<string, Player>)JsonSerializer.Deserialize(data, database.GetType());
-                    json_reader.Close();
+                    Database = (Dictionary<string, Player>?)JsonSerializer.Deserialize(data, Database.GetType()) ?? throw new NullReferenceException("unable to get player database");
                 }
-                catch (System.IO.FileNotFoundException)
+                catch (FileNotFoundException)
                 {
                     // Do nothing if the file cannot be found to load
                 }
@@ -81,24 +79,24 @@ namespace CardServer.Players
         /// <summary>
         /// The static database instance for the current executable to utilize
         /// </summary>
-        private static PlayerDatabase db;
+        private static PlayerDatabase? Instance;
 
         /// <summary>
         /// Initializes the database with the provided database filename
         /// </summary>
         /// <param name="db_fname">the filename to use, or null if none</param>
-        public static void InitDatabase(string db_fname)
+        public static void InitDatabase(string? db_fname)
         {
-            db = new PlayerDatabase(db_fname: db_fname);
+            Instance = new PlayerDatabase(db_fname: db_fname);
         }
 
         /// <summary>
         /// Returns the player database isntance to utilize
         /// </summary>
         /// <returns></returns>
-        public static PlayerDatabase GetInstance()
+        public static PlayerDatabase? GetInstance()
         {
-            return db;
+            return Instance;
         }
 
         /// <summary>
@@ -107,11 +105,11 @@ namespace CardServer.Players
         /// <param name="username">The username to search for</param>
         /// <param name="hash">The has associated with the username</param>
         /// <returns>Player if valid username and hash found; otherwise null</returns>
-        public Player CheckPlayerNameHash(string username, string hash)
+        public Player? CheckPlayerNameHash(string username, string hash)
         {
-            Player p = GetPlayerForName(username);
+            Player? p = GetPlayerForName(username);
 
-            if (p != null && p.password_hash == hash)
+            if (p != null && p.PaswordHash == hash)
             {
                 return p;
             }
@@ -126,11 +124,11 @@ namespace CardServer.Players
         /// </summary>
         /// <param name="username">The username to get the name player for</param>
         /// <returns>The game player if it exists; otherwise null</returns>
-        public Player GetPlayerForName(string username)
+        public Player? GetPlayerForName(string username)
         {
-            if (database.ContainsKey(username))
+            if (Database.ContainsKey(username))
             {
-                return database[username];
+                return Database[username];
             }
             else
             {
@@ -145,11 +143,11 @@ namespace CardServer.Players
         /// <param name="hash">The hash value to associate with the username</param>
         /// <param name="save_db">Whether to call to save the database after the user is added</param>
         /// <returns>True if the user can be created; otherwise false (e.g. username already exists)</returns>
-        public bool CreateNewPlayer(string name, string hash, bool save_db=true)
+        public bool CreateNewPlayer(string name, string hash, bool save_db = true)
         {
-            if (!database.ContainsKey(name))
+            if (!Database.ContainsKey(name))
             {
-                database.Add(
+                Database.Add(
                     key: name,
                     value: new Player(
                         name: name,
@@ -164,3 +162,4 @@ namespace CardServer.Players
         }
     }
 }
+        

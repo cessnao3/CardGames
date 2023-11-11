@@ -17,19 +17,19 @@ namespace CardServer.Games
         /// <summary>
         /// Message to store in a given round to provide as a game update to players
         /// </summary>
-        string trick_msg = null;
+        string? TrickMessage { get; set; } = null;
 
         /// <summary>
         /// Game state to store the leading card in a trick
         /// </summary>
-        protected Card lead_card = null;
+        protected Card? LoadCard { get; set; } = null;
 
         /// <summary>
         /// Constructs the generic trick-taking game class
         /// </summary>
         /// <param name="game_id">The game ID of the game</param>
         /// <param name="players">The players to add to the game</param>
-        public GenericTrickGame(int game_id, GamePlayer[] players) : base(game_id: game_id, players: players)
+        public GenericTrickGame(int game_id, GamePlayer[] players) : base(gameId: game_id, players: players)
         {
             // Empty Constructor
         }
@@ -44,7 +44,7 @@ namespace CardServer.Games
 
             // Reset game states
             trick_count = 0;
-            lead_card = null;
+            LoadCard = null;
         }
 
         /// <summary>
@@ -74,22 +74,22 @@ namespace CardServer.Games
         /// <returns></returns>
         protected bool TrickCanBeCompleted()
         {
-            return played_cards.Count >= CountCenterCardExpected();
+            return PlayedCards.Count >= CountCenterCardExpected();
         }
 
         /// <summary>
         /// Sets the trick message. If the message is already set, does nothing
         /// </summary>
         /// <param name="msg">The new message to set as the trick message</param>
-        protected void SetTrickMessage(string msg=null)
+        protected void SetTrickMessage(string? msg = null)
         {
-            if (msg != null && msg.Length > 0)
+            if (!string.IsNullOrWhiteSpace(msg))
             {
-                trick_msg = msg;
+                TrickMessage = msg;
             }
             else
             {
-                trick_msg = null;
+                TrickMessage = null;
             }
         }
 
@@ -120,13 +120,10 @@ namespace CardServer.Games
 
             // Determine if the trick message should be appended
             if (CanShowTrickMessage() &&
-                trick_msg != null &&
-                trick_msg.Length > 0)
+                TrickMessage != null &&
+                TrickMessage.Length > 0)
             {
-                msg.CurrentGameStatus = string.Format(
-                    "{0:} - {1:}",
-                    msg.CurrentGameStatus,
-                    trick_msg);
+                msg.CurrentGameStatus = $"{msg.CurrentGameStatus} - {TrickMessage}";
             }
 
             // Return the resulting message

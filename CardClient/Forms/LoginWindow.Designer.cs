@@ -1,4 +1,4 @@
-﻿namespace CardClient
+﻿namespace CardClient.Forms
 {
     partial class LoginWindow
     {

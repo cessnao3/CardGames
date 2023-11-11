@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using CardGameLibrary.Cards;
 using CardGameLibrary.GameParameters;
@@ -25,64 +26,64 @@ namespace CardServer.Games
         /// <summary>
         /// Provides the deck of cards used in the game
         /// </summary>
-        protected Deck deck;
+        protected Deck? Deck { get; set; }
 
         /// <summary>
         /// Stores the current player index
         /// </summary>
-        protected int current_player_ind;
+        protected int CurrentPlayerIndex { get; set; }
 
         /// <summary>
         /// Provides the player scores for each round of the game
         /// </summary>
-        protected Dictionary<GamePlayer, List<int>> scores;
+        protected Dictionary<GamePlayer, List<int>> Scores { get; set; }
 
         /// <summary>
         /// Stores each player's hand
         /// </summary>
-        protected Dictionary<GamePlayer, Hand> hands;
+        protected Dictionary<GamePlayer, Hand> Hands { get; set; }
 
         /// <summary>
         /// Keeps track of each round
         /// </summary>
-        protected int round = 0;
+        protected int Round { get; set; } = 0;
 
         /// <summary>
         /// Stores the center pool of played cards
         /// </summary>
-        protected Dictionary<GamePlayer, Card> played_cards;
+        protected Dictionary<GamePlayer, Card> PlayedCards { get; set; }
 
         /// <summary>
         /// Provides the cards that should be visible to all players
         /// </summary>
-        protected List<Card> center_cards;
+        protected List<Card> CenterCards { get; set; }
 
         /// <summary>
         /// Determines when the last game status update was sent out
         /// </summary>
-        DateTime last_update_sent = DateTime.UtcNow;
+        DateTime LastUpdateSent { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Defines the maximum number of cards to deal to the players
         /// If 0 or negative, will deal the maximum number of cards until
         /// the deck is empty
         /// </summary>
-        protected int card_deal_limit = 0;
+        protected int CardDealLimit { get; set; } = 0;
 
         /// <summary>
         /// Constructs the generic game class
         /// </summary>
-        /// <param name="game_id">The game ID of the game</param>
+        /// <param name="gameId">The game ID of the game</param>
         /// <param name="players">The players to add to the game</param>
-        public GenericGame(int game_id, GamePlayer[] players)
+        public GenericGame(int gameId, GamePlayer[] players)
         {
             // Store the game ID
-            this.GameID = game_id;
+            GameID = gameId;
 
             // Check the number of players
             if (players == null || players.Length != 4)
             {
-                throw new GameException(game_id, "Must provide four players to game");
+                throw new GameException(gameId, "Must provide four players to game");
             }
 
             // Loop through each player to ensure that there are no duplicates
@@ -92,24 +93,24 @@ namespace CardServer.Games
                 {
                     if (players[i] == players[j])
                     {
-                        throw new GameException(game_id, "Cannot have duplicate players in the same game");
+                        throw new GameException(gameId, "Cannot have duplicate players in the same game");
                     }
                 }
             }
 
             // Save the players
-            this.Players = players;
+            Players = players;
 
             // Initialize the game states
-            played_cards = new Dictionary<GamePlayer, Card>();
-            scores = new Dictionary<GamePlayer, List<int>>();
-            hands = new Dictionary<GamePlayer, Hand>();
-            center_cards = new List<Card>();
+            PlayedCards = new Dictionary<GamePlayer, Card>();
+            Scores = new Dictionary<GamePlayer, List<int>>();
+            Hands = new Dictionary<GamePlayer, Hand>();
+            CenterCards = new List<Card>();
 
             foreach (GamePlayer p in this.Players)
             {
-                scores.Add(p, new List<int>());
-                hands.Add(p, new Hand());
+                Scores.Add(p, new List<int>());
+                Hands.Add(p, new Hand());
             }
         }
 
@@ -123,29 +124,32 @@ namespace CardServer.Games
         /// </summary>
         protected virtual void ShuffleAndDeal()
         {
+            // Ensure a deck is provided
+            if (Deck == null) throw new NullReferenceException(nameof(Deck));
+
             // Clear player hands
-            foreach (GamePlayer p in Players) hands[p].Clear();
+            foreach (GamePlayer p in Players) Hands[p].Clear();
 
             // Shuffle the deck and deal to each player
-            deck.Shuffle();
+            Deck.Shuffle();
             int card_count = 0;
-            while (deck.HasNext())
+            while (Deck.HasNext())
             {
                 // Add a card to each player
                 foreach (GamePlayer p in Players)
                 {
-                    hands[p].AddCard(deck.Next());
+                    Hands[p].AddCard(Deck.Next() ?? throw new NullReferenceException("unable to get next card"));
                 }
 
                 // Increment the card count
                 card_count += 1;
 
                 // Stop dealing if we have reached the card limit
-                if (card_deal_limit > 0 && card_count >= card_deal_limit) break;
+                if (CardDealLimit > 0 && card_count >= CardDealLimit) break;
             }
 
             // Sort the resulting player hands
-            foreach (Hand h in hands.Values)
+            foreach (Hand h in Hands.Values)
             {
                 h.Sort();
             }
@@ -163,7 +167,7 @@ namespace CardServer.Games
         /// </summary>
         protected virtual void FinishRound()
         {
-            round += 1;
+            Round += 1;
 
             if (IsActive())
             {
@@ -177,7 +181,7 @@ namespace CardServer.Games
         /// <returns>The player associated with the current player index</returns>
         public GamePlayer CurrentPlayer()
         {
-            return Players[current_player_ind];
+            return Players[CurrentPlayerIndex];
         }
 
         /// <summary>
@@ -203,7 +207,7 @@ namespace CardServer.Games
         /// </summary>
         public virtual void IncrementPlayer()
         {
-            current_player_ind = (current_player_ind + 1) % Players.Length;
+            CurrentPlayerIndex = (CurrentPlayerIndex + 1) % Players.Length;
         }
 
         /// <summary>
@@ -216,7 +220,7 @@ namespace CardServer.Games
             {
                 if (Players[i].Equals(p))
                 {
-                    current_player_ind = i;
+                    CurrentPlayerIndex = i;
                     return;
                 }
             }
@@ -231,14 +235,14 @@ namespace CardServer.Games
         public Dictionary<GamePlayer, int> OverallScores()
         {
             // Create the overall dictionary
-            Dictionary<GamePlayer, int> overall_scores = new Dictionary<GamePlayer, int>();
+            Dictionary<GamePlayer, int> overall_scores = new();
 
             // Loop through each player to add each round score to the overall score
             foreach (GamePlayer p in Players)
             {
                 overall_scores[p] = 0;
 
-                foreach (int s in scores[p])
+                foreach (int s in Scores[p])
                 {
                     overall_scores[p] += s;
                 }
@@ -261,36 +265,32 @@ namespace CardServer.Games
         /// <returns>The game status provided in a message that can be sent over the network</returns>
         virtual public MsgGameStatus GetGameStatus(GamePlayer player)
         {
-            last_update_sent = DateTime.UtcNow;
+            LastUpdateSent = DateTime.UtcNow;
 
-            List<Hand> player_hands = new List<Hand>();
-            List<Card> pool_values = new List<Card>();
-            List<int> player_scores = new List<int>();
+            List<Hand> playerHands = new();
+            List<Card?> poolValues = new();
+            List<int> playerScores = new();
 
             foreach (GamePlayer p in Players)
             {
-                player_hands.Add(hands[p]);
+                playerHands.Add(Hands[p]);
 
-                if (played_cards.ContainsKey(p)) pool_values.Add(played_cards[p]);
-                else pool_values.Add(null);
+                if (PlayedCards.ContainsKey(p)) poolValues.Add(PlayedCards[p]);
+                else poolValues.Add(null);
 
-                player_scores.Add(OverallScores()[p]);
+                playerScores.Add(OverallScores()[p]);
             }
 
-            MsgGameStatus status_val = new MsgGameStatus()
-            {
-                Players = new List<GamePlayer>(Players),
-                Hands = player_hands,
-                CurrentGameStatus = string.Empty,
-                CurrentPlayer = current_player_ind,
-                GameID = GameID,
-                GameType = (int)GetGameType(),
-                Scores = player_scores,
-                PlayedCardsByPlayer = pool_values,
-                CenterActionCards = center_cards
-            };
-
-            return status_val;
+             return new MsgGameStatus(
+                gameId: GameID,
+                gameType: (int)GetGameType(),
+                players: Players.ToList(),
+                hands: playerHands,
+                status: string.Empty,
+                currentPlayer: CurrentPlayerIndex,
+                scores: playerScores,
+                playedCards: poolValues,
+                centerCards: CenterCards);
         }
 
         /// <summary>
@@ -308,7 +308,7 @@ namespace CardServer.Games
         {
             return
                 !IsActive() &&
-                DateTime.UtcNow - last_update_sent > TimeSpan.FromMinutes(5);
+                DateTime.UtcNow - LastUpdateSent > TimeSpan.FromMinutes(5);
         }
     }
 }

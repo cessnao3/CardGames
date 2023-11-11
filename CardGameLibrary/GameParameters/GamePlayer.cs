@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace CardGameLibrary.GameParameters
 {
@@ -12,14 +13,16 @@ namespace CardGameLibrary.GameParameters
         /// <summary>
         /// Defines the player user name
         /// </summary>
-        public string name { get; protected set; }
+        [JsonInclude]
+        public string Name { get; protected set; }
 
         /// <summary>
         /// Default parameterless constructor
         /// </summary>
-        private GamePlayer()
+        [JsonConstructor]
+        public GamePlayer()
         {
-            name = null;
+            Name = "";
         }
 
         /// <summary>
@@ -28,22 +31,25 @@ namespace CardGameLibrary.GameParameters
         /// <param name="name">The player's user name</param>
         public GamePlayer(string name)
         {
-            this.name = name.ToLower().Trim();
+            Name = name.ToLower().Trim();
         }
 
         /// <summary>
         /// Provides the capitalized name
         /// </summary>
         /// <returns>string of the capitalized name</returns>
-        public string CapitalizedName()
+        public string CapitalizedName
         {
-            if (name.Length > 1)
+            get
             {
-                return name.Substring(0, 1).ToUpper() + name.Substring(1, name.Length - 1);
-            }
-            else
-            {
-                return name.ToUpper();
+                if (Name.Length > 1)
+                {
+                    return Name[..1].ToUpper() + Name[1..];
+                }
+                else
+                {
+                    return Name.ToUpper();
+                }
             }
         }
 
@@ -51,25 +57,18 @@ namespace CardGameLibrary.GameParameters
         /// Provide a short three-character name
         /// </summary>
         /// <returns>The short name for the player</returns>
-        public string ShortName()
-        {
-            return CapitalizedName().Substring(
-                0,
-                Math.Min(
-                    3,
-                    name.Length));
-        }
+        public string ShortName { get => CapitalizedName[..Math.Min(3, Name.Length)]; }
 
         /// <summary>
         /// Determines if the object is equal to the player object
         /// </summary>
         /// <param name="obj">The object to compare to</param>
         /// <returns>True if equal</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is GamePlayer)
+            if (obj is GamePlayer player)
             {
-                return ((GamePlayer)obj).name.ToLower() == name.ToLower();
+                return player.Name.ToLower() == Name.ToLower();
             }
             else
             {
@@ -83,7 +82,7 @@ namespace CardGameLibrary.GameParameters
         /// <returns>name hash code</returns>
         public override int GetHashCode()
         {
-            return name.GetHashCode();
+            return Name.GetHashCode();
         }
     }
 }

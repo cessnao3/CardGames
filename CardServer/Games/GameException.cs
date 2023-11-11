@@ -13,7 +13,7 @@ namespace CardServer.Games
         /// <summary>
         /// The GameID to associate with the exception
         /// </summary>
-        int game_id;
+        int GameID { get; }
 
         /// <summary>
         /// Creates the GameException class with the provided message
@@ -22,7 +22,7 @@ namespace CardServer.Games
         /// <param name="message">The exception message</param>
         public GameException(int game_id, string message) : base(message: message)
         {
-            this.game_id = game_id;
+            GameID = game_id;
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace CardServer.Games
         {
             get
             {
-                return string.Format("Game ID {0:}: {1:}", game_id, base.Message);
+                return $"Game ID {GameID}: {base.Message}";
             }
 
         }

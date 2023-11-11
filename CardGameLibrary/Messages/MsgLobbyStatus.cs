@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using CardGameLibrary.GameParameters;
 
 namespace CardGameLibrary.Messages
@@ -13,32 +15,50 @@ namespace CardGameLibrary.Messages
         /// <summary>
         /// Defines the ID of the game
         /// </summary>
-        public int GameID { get; set; }
+        [JsonInclude]
+        public int GameID { get; private set; }
 
         /// <summary>
         /// The players to read in
         /// </summary>
-        public List<GamePlayer> Players { get; set; }
+        [JsonInclude]
+        public IReadOnlyList<GamePlayer?> Players { get; private set; }
 
         /// <summary>
         /// The game type for the current lobby
         /// </summary>
-        public GameTypes GameType { get; set; }
+        [JsonInclude]
+        public GameTypes GameType { get; private set; }
 
         /// <summary>
         /// Determines if the lobby is ready
         /// </summary>
-        public bool LobbyReady { get; set; }
+        [JsonInclude]
+        public bool LobbyReady { get; private set; }
 
         /// <summary>
         /// Constructor to setup the lobby status message
         /// </summary>
+        [JsonConstructor]
         public MsgLobbyStatus() : base(MessageTypeID.LobbyStatus)
         {
             // Initilize Parameters
             GameID = -1;
             GameType = GameTypes.Invalid;
             LobbyReady = false;
+            Players = Array.Empty<GamePlayer?>();
+        }
+
+        /// <summary>
+        /// Constructor to setup the lobby status message
+        /// </summary>
+        public MsgLobbyStatus(int gameId, GameTypes gameType, bool lobbyReady, IEnumerable<GamePlayer?> players) : base(MessageTypeID.LobbyStatus)
+        {
+            // Initilize Parameters
+            GameID = gameId;
+            GameType = gameType;
+            LobbyReady = lobbyReady;
+            Players = players.ToList();
         }
 
         /// <summary>

@@ -13,20 +13,20 @@ namespace CardServer.Players
         /// <summary>
         /// Defines the player user name
         /// </summary>
-        public string name { get; set; }
+        public string Name { get; private set; }
 
         /// <summary>
         /// Defines the default password hash
         /// </summary>
-        public string password_hash { get; set; }
+        public string PaswordHash { get; private set; }
 
         /// <summary>
         /// Empty constructor for use in serialization
         /// </summary>
         private Player()
         {
-            name = null;
-            password_hash = null;
+            Name = string.Empty;
+            PaswordHash = string.Empty;
         }
 
         /// <summary>
@@ -36,8 +36,8 @@ namespace CardServer.Players
         /// <param name="password_hash">The player's password hash</param>
         public Player(string name, string password_hash)
         {
-            this.name = name.ToLower().Trim();
-            this.password_hash = password_hash.ToLower().Trim();
+            Name = name.ToLower().Trim();
+            PaswordHash = password_hash.ToLower().Trim();
         }
 
         /// <summary>
@@ -45,11 +45,11 @@ namespace CardServer.Players
         /// </summary>
         /// <param name="obj">The object to compare to</param>
         /// <returns>True if equal</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is Player)
+            if (obj is Player plr)
             {
-                return ((Player)obj).name.ToLower() == name.ToLower();
+                return plr.Name.ToLower() == Name.ToLower();
             }
             else
             {
@@ -63,7 +63,7 @@ namespace CardServer.Players
         /// <returns>name hash code</returns>
         public override int GetHashCode()
         {
-            return name.GetHashCode();
+            return Name.GetHashCode();
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace CardServer.Players
         /// <returns>An associated GamePlayer object</returns>
         public GamePlayer GetGamePlayer()
         {
-            return new GamePlayer(name: name);
+            return new GamePlayer(name: Name);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CardGameLibrary.Messages
 {
@@ -20,24 +21,39 @@ namespace CardGameLibrary.Messages
         /// <summary>
         /// Defines the action request from the user
         /// </summary>
-        public ActionType Action { get; set; }
+        [JsonInclude]
+        public ActionType Action { get; private set; }
 
         /// <summary>
         /// Defines the username for the user
         /// </summary>
-        public string Username { get; set; }
+        [JsonInclude]
+        public string Username { get; private set; }
 
         /// <summary>
         /// Defines the password hash for the user
         /// </summary>
-        public string PasswordHash { get; set; }
+        [JsonInclude]
+        public string PasswordHash { get; private set; }
+
+        /// <summary>
+        /// Define the JSON empty constructor
+        /// </summary>
+        [JsonConstructor]
+        public MsgLogin() : base(MessageTypeID.UserLogin)
+        {
+            Username = string.Empty;
+            PasswordHash = string.Empty;
+        }
 
         /// <summary>
         /// Constructor to set the server response
         /// </summary>
-        public MsgLogin() : base(MessageTypeID.UserLogin)
+        public MsgLogin(ActionType action, string user, string password) : base(MessageTypeID.UserLogin)
         {
-            // Empty Constructor
+            Action = action;
+            Username = user;
+            PasswordHash = password;
         }
 
         /// <summary>

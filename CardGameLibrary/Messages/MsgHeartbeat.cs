@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace CardGameLibrary.Messages
 {
@@ -12,6 +13,7 @@ namespace CardGameLibrary.Messages
         /// <summary>
         /// Constuctor to provide a basic heartbeat message
         /// </summary>
+        [JsonConstructor]
         public MsgHeartbeat() : base(MessageTypeID.Heartbeat)
         {
             // Empty constructor

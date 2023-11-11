@@ -28,58 +28,58 @@ namespace CardServer.Games
         /// <summary>
         /// Defines the skip index that is used when a player is going alone
         /// </summary>
-        int going_alone_skip_ind = -1;
+        int? GoingAloneSkipInd { get; set; }
 
         /// <summary>
         /// Determines if the bidding round has been completed
         /// </summary>
-        bool bidding_complete;
+        bool BiddingComplete { get; set; }
 
         /// <summary>
         /// Determines if the first round of bidding has been complted
         /// </summary>
-        bool first_bid_round_complete;
+        bool FirstBidRoundComplete { get; set; }
 
         /// <summary>
         /// Determines which player called up trump
         /// </summary>
-        GamePlayer bidding_player;
+        GamePlayer? BiddingPlayer { get; set; }
 
         /// <summary>
         /// Boolean to allow for screwing the dealer
         /// </summary>
-        readonly bool screw_the_dealer = true;
+        bool ScrewTheDealer { get; } = true;
 
         /// <summary>
         /// Property to determine whether trump has been selected
         /// </summary>
         bool TrumpSelected
         {
-            get { return bidding_player != null; }
+            get { return BiddingPlayer != null; }
         }
 
         /// <summary>
         /// Storage location to determine the number of tricks taken by each player
         /// </summary>
-        readonly Dictionary<GamePlayer, int> tricks_taken = new Dictionary<GamePlayer, int>();
+        Dictionary<GamePlayer, int> TricksTaken { get; } = new();
 
         /// <summary>
         /// Determines the kitty card that is shown to all players for trump selection
         /// </summary>
-        Card kitty_card = null;
+        Card? KittyCard { get; set; } = null;
 
         /// <summary>
         /// Constructs a Euchre game instance
         /// </summary>
-        /// <param name="game_id">The game ID of the game</param>
+        /// <param name="gameId">The game ID of the game</param>
         /// <param name="players">The players to add to the game</param>
-        public Euchre(int game_id, GamePlayer[] players) : base(game_id: game_id, players: players)
+        public Euchre(int gameId, GamePlayer[] players) : base(game_id: gameId, players: players)
         {
             // Define the number of cards to deal
-            card_deal_limit = 5;
+            CardDealLimit = 5;
 
             // Setup the Euchre deck
-            deck = new Deck(
+            Deck = new Deck(
                 values: new Card.Value[]
                 {
                     Card.Value.Nine,
@@ -106,8 +106,8 @@ namespace CardServer.Games
             if (TrumpSelected)
             {
                 // Extract the current suit and value for the card
-                int effective_suit = (int)c.suit;
-                int effective_value = (int)c.value;
+                int effective_suit = (int)c.CardSuit;
+                int effective_value = (int)c.CardValue;
 
                 // Adjust the effective suit for trump
                 if (IsTrumpCard(c))
@@ -132,7 +132,7 @@ namespace CardServer.Games
             }
             else
             {
-                return c.CardValue();
+                return c.CardValueSorting();
             }
         }
 
@@ -142,7 +142,7 @@ namespace CardServer.Games
         /// <returns>Returns the number of cards expected in a trick</returns>
         override protected int CountCenterCardExpected()
         {
-            return (going_alone_skip_ind >= 0) ? 3 : 4;
+            return (GoingAloneSkipInd >= 0) ? 3 : 4;
         }
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace CardServer.Games
             base.IncrementPlayer();
 
             // If a player is being skipped for going alone, increment again
-            if (going_alone_skip_ind == current_player_ind)
+            if (GoingAloneSkipInd == CurrentPlayerIndex)
             {
                 base.IncrementPlayer();
             }
@@ -195,11 +195,7 @@ namespace CardServer.Games
                 Card.Suit.Heart => Card.Suit.Diamond,
                 _ => throw new GameException(
                     GameID,
-                    string.Format(
-                        "Unknown trump suit {0:} provided",
-                        Enum.GetName(
-                            enumType: typeof(Card.Suit),
-                            trump))),
+                    $"Unknown trump suit {trump} provided"),
             };
 
             return new Card(
@@ -224,7 +220,7 @@ namespace CardServer.Games
         /// <returns>Dealer player</returns>
         GamePlayer Dealer()
         {
-            return Players[round % Players.Length];
+            return Players[Round % Players.Length];
         }
 
         /// <summary>
@@ -236,28 +232,28 @@ namespace CardServer.Games
             ShuffleAndDeal();
 
             // Setup the game state
-            lead_card = null;
+            LoadCard = null;
 
             // Setup bidding states
-            bidding_complete = false;
-            first_bid_round_complete = false;
-            going_alone_skip_ind = -1;
-            bidding_player = null;
+            BiddingComplete = false;
+            FirstBidRoundComplete = false;
+            GoingAloneSkipInd = -1;
+            BiddingPlayer = null;
 
             // Initialize trump
             trump = Card.Suit.Club;
 
             // Reset tricks so far
-            tricks_taken.Clear();
+            TricksTaken.Clear();
             foreach (GamePlayer p in Players)
             {
-                tricks_taken.Add(p, 0);
+                TricksTaken.Add(p, 0);
             }
 
             // Add a value to the center cards
-            center_cards.Clear();
-            kitty_card = deck.Next();
-            center_cards.Add(kitty_card);
+            CenterCards.Clear();
+            KittyCard = Deck?.Next() ?? throw new NullReferenceException(nameof(Deck));
+            CenterCards.Add(KittyCard);
 
             // Set the correct player to start
             SetCurrentPlayer(Dealer());
@@ -280,7 +276,7 @@ namespace CardServer.Games
             }
             else
             {
-                return c.suit;
+                return c.CardSuit;
             }
         }
 
@@ -299,7 +295,7 @@ namespace CardServer.Games
         /// </summary>
         void SortHands()
         {
-            foreach (Hand hp in hands.Values)
+            foreach (Hand hp in Hands.Values)
             {
                 hp.Sort(comparison: EuchreComparer);
             }
@@ -320,21 +316,21 @@ namespace CardServer.Games
                     message: "Player cannot perform an action until their turn");
             }
 
-            if (bidding_complete)
+            if (BiddingComplete)
             {
                 // Boolean to check if the provided card is valid
                 bool card_valid = true;
 
                 // Extract the current hand
-                Hand h = hands[p];
+                Hand h = Hands[p];
 
                 // Perform checks for following suit
-                if (lead_card != null)
+                if (LoadCard != null)
                 {
                     // The player must play the lead suit if available
                     if (
-                        EffectiveSuit(lead_card) != EffectiveSuit(msg.Card) &&
-                        h.HasCardWith(x => EffectiveSuit(x) == EffectiveSuit(lead_card)))
+                        EffectiveSuit(LoadCard) != EffectiveSuit(msg.Card) &&
+                        h.HasCardWith(x => EffectiveSuit(x) == EffectiveSuit(LoadCard)))
                     {
                         card_valid = false;
                         SetTrickMessage("Player must follow suit");
@@ -348,20 +344,17 @@ namespace CardServer.Games
                     SetTrickMessage();
 
                     // Check if the lead card is valid
-                    if (lead_card == null)
-                    {
-                        lead_card = msg.Card;
-                    }
+                    LoadCard ??= msg.Card;
 
                     // Clear the last trick
                     if (TrickCanBeCompleted())
                     {
-                        played_cards.Clear();
+                        PlayedCards.Clear();
                     }
 
                     // Play the respective card from the hand
                     h.PlayCard(msg.Card);
-                    played_cards.Add(p, msg.Card);
+                    PlayedCards.Add(p, msg.Card);
 
                     // Set the next player, finishing the round if necessary
                     if (TrickCanBeCompleted())
@@ -378,15 +371,15 @@ namespace CardServer.Games
             {
                 // Determine if trump has been selected and the dealer must discard a card
                 if (Dealer().Equals(p) &&
-                    hands[Dealer()].cards.Count > 5 &&
+                    Hands[Dealer()].Cards.Count > 5 &&
                     TrumpSelected)
                 {
                     // Discard the card that the dealer plays
                     // Set bidding to complete
-                    if (hands[Dealer()].HasCard(msg.Card))
+                    if (Hands[Dealer()].HasCard(msg.Card))
                     {
-                        hands[Dealer()].PlayCard(msg.Card);
-                        bidding_complete = true;
+                        Hands[Dealer()].PlayCard(msg.Card);
+                        BiddingComplete = true;
                     }
                 }
 
@@ -394,21 +387,21 @@ namespace CardServer.Games
                 if (msg.Card.IsSpecial())
                 {
                     // Allow skipping from any 
-                    if (msg.Card.data == EuchreParameters.skip.data)
+                    if (msg.Card.Data == EuchreParameters.skip.data)
                     {
                         // Check if the dealer is the current player for defining parameters
                         if (Dealer().Equals(CurrentPlayer()))
                         {
-                            if (!first_bid_round_complete)
+                            if (!FirstBidRoundComplete)
                             {
                                 // Set the first bidding round to complete and increment
-                                first_bid_round_complete = true;
+                                FirstBidRoundComplete = true;
                                 IncrementPlayer();
                             }
-                            else if (!screw_the_dealer)
+                            else if (!ScrewTheDealer)
                             {
                                 // Re-deal the hand, with a new dealer
-                                round += 1;
+                                Round += 1;
                                 SetupNewRound();
                                 return;
                             }
@@ -421,33 +414,33 @@ namespace CardServer.Games
                     }
 
                     // Perform steps for the first bidding round
-                    if (!first_bid_round_complete)
+                    if (!FirstBidRoundComplete)
                     {
                         // Allow the dealer to pickup the kitty-card
-                        if (msg.Card.data == EuchreParameters.pickup_card.data ||
-                            msg.Card.data == EuchreParameters.go_alone.data)
+                        if (msg.Card.Data == EuchreParameters.pickup_card.data ||
+                            msg.Card.Data == EuchreParameters.go_alone.data)
                         {
                             // Set trump as selected
-                            bidding_player = p;
-                            trump = kitty_card.suit;
-                            center_cards.Clear();
+                            BiddingPlayer = p;
+                            trump = KittyCard?.CardSuit ?? throw new NullReferenceException(nameof(KittyCard));
+                            CenterCards.Clear();
 
                             // Allow the player to go it alone
-                            if (msg.Card.data == EuchreParameters.go_alone.data)
+                            if (msg.Card.Data == EuchreParameters.go_alone.data)
                             {
-                                going_alone_skip_ind = PartnerPlayer(current_player_ind);
+                                GoingAloneSkipInd = PartnerPlayer(CurrentPlayerIndex);
                             }
 
                             // Set the dealer as the current player so they may discard
                             // However, if the dealer is selected as the going-alone player, don't make them pick up the card
-                            if (going_alone_skip_ind >= 0 && Players[going_alone_skip_ind].Equals(Dealer()))
+                            if (GoingAloneSkipInd.HasValue && Players[GoingAloneSkipInd.Value].Equals(Dealer()))
                             {
-                                bidding_complete = true;
+                                BiddingComplete = true;
                             }
                             else
                             {
                                 // Add the kitty-card to the dealer's hand
-                                hands[Dealer()].AddCard(kitty_card);
+                                Hands[Dealer()].AddCard(KittyCard);
                                 SetCurrentPlayer(Dealer());
                                 SortHands();
                             }
@@ -457,51 +450,51 @@ namespace CardServer.Games
                     else
                     {
                         // Allow players to select trump
-                        if (msg.Card.data == EuchreParameters.go_alone.data)
+                        if (msg.Card.Data == EuchreParameters.go_alone.data)
                         {
-                            going_alone_skip_ind = PartnerPlayer(current_player_ind);
+                            GoingAloneSkipInd = PartnerPlayer(CurrentPlayerIndex);
                         }
-                        if (msg.Card.data == GameAction.select_clubs.data)
+                        if (msg.Card.Data == GameAction.select_clubs.data)
                         {
-                            bidding_player = p;
-                            bidding_complete = true;
+                            BiddingPlayer = p;
+                            BiddingComplete = true;
                             trump = Card.Suit.Club;
                         }
-                        else if (msg.Card.data == GameAction.select_diamonds.data)
+                        else if (msg.Card.Data == GameAction.select_diamonds.data)
                         {
-                            bidding_player = p;
-                            bidding_complete = true;
+                            BiddingPlayer = p;
+                            BiddingComplete = true;
                             trump = Card.Suit.Diamond;
                         }
-                        else if (msg.Card.data == GameAction.select_hearts.data)
+                        else if (msg.Card.Data == GameAction.select_hearts.data)
                         {
-                            bidding_player = p;
-                            bidding_complete = true;
+                            BiddingPlayer = p;
+                            BiddingComplete = true;
                             trump = Card.Suit.Heart;
                         }
-                        else if (msg.Card.data == GameAction.select_spades.data)
+                        else if (msg.Card.Data == GameAction.select_spades.data)
                         {
-                            bidding_player = p;
-                            bidding_complete = true;
+                            BiddingPlayer = p;
+                            BiddingComplete = true;
                             trump = Card.Suit.Spade;
                         }
                     }
                 }
 
                 // Perform any last-minute items before finishing the bidding round
-                if (bidding_complete)
+                if (BiddingComplete)
                 {
                     // Adjust player hands for going alone
-                    if (going_alone_skip_ind >= 0)
+                    if (GoingAloneSkipInd.HasValue)
                     {
-                        hands[Players[going_alone_skip_ind]].cards.Clear();
+                        Hands[Players[GoingAloneSkipInd.Value]].Cards.Clear();
                     }
 
                     // Sort each hand
                     SortHands();
 
                     // Reset the center cards
-                    center_cards.Clear();
+                    CenterCards.Clear();
 
                     // Set the player to the left of the dealer
                     SetCurrentPlayer(Dealer());
@@ -519,45 +512,45 @@ namespace CardServer.Games
             base.FinishTrick();
 
             // Determine the winner of the suit
-            Card winning_card = lead_card;
-            GamePlayer winning_player = null;
+            Card winningCard = LoadCard ?? throw new GameException(GameID, "unexpected null winning card found");
+            GamePlayer? winningPlayer = null;
 
-            foreach (var kvp in played_cards)
+            foreach (var kvp in PlayedCards)
             {
                 // Extract values
                 GamePlayer p = kvp.Key;
                 Card c = kvp.Value;
 
                 // Check for points to add
-                if ((EffectiveSuit(winning_card) == EffectiveSuit(c) && EuchreComparer(c, winning_card) >= 0) ||
-                    (!IsTrumpCard(winning_card) && IsTrumpCard(c)))
+                if ((EffectiveSuit(winningCard) == EffectiveSuit(c) && EuchreComparer(c, winningCard) >= 0) ||
+                    (!IsTrumpCard(winningCard) && IsTrumpCard(c)))
                 {
-                    winning_card = c;
-                    winning_player = p;
+                    winningCard = c;
+                    winningPlayer = p;
                 }
             }
 
             // Add tricks taken so far
-            tricks_taken[winning_player] += 1;
+            TricksTaken[winningPlayer ?? throw new GameException(GameID, "unable to find winning player")] += 1;
 
             // Reset the lead card
-            lead_card = null;
+            LoadCard = null;
 
             // Set the next player to the winning player
-            SetCurrentPlayer(winning_player);
+            SetCurrentPlayer(winningPlayer);
 
             // Finish the round if it is complete
             if (trick_count == 5)
             {
                 // Add up tricks
-                int ns_tricks = tricks_taken[Players[0]] + tricks_taken[Players[2]];
-                int ew_tricks = tricks_taken[Players[1]] + tricks_taken[Players[3]];
+                int ns_tricks = TricksTaken[Players[0]] + TricksTaken[Players[2]];
+                int ew_tricks = TricksTaken[Players[1]] + TricksTaken[Players[3]];
 
                 // Bidding Partnership
                 int bidding_partnership = -1;
                 for (int i = 0; i < Players.Length; ++i)
                 {
-                    if (bidding_player.Equals(Players[i]))
+                    if (BiddingPlayer?.Equals(Players[i]) ?? throw new GameException(GameID, "unable to find bidding player"))
                     {
                         bidding_partnership = i % 2;
                         break;
@@ -583,7 +576,7 @@ namespace CardServer.Games
                     // Check for a march
                     if (winning_count == 5)
                     {
-                        if (going_alone_skip_ind < 0)
+                        if (GoingAloneSkipInd < 0)
                         {
                             points_to_add = 2;
                         }
@@ -610,17 +603,17 @@ namespace CardServer.Games
                 {
                     if (i % 2 == partnership_winning)
                     {
-                        scores[Players[i]].Add(points_to_add);
+                        Scores[Players[i]].Add(points_to_add);
                     }
                     else
                     {
-                        scores[Players[i]].Add(0);
+                        Scores[Players[i]].Add(0);
                     }
                 }
 
                 // Finish the round
                 FinishRound();
-                played_cards.Clear();
+                PlayedCards.Clear();
             }
         }
 
@@ -665,47 +658,29 @@ namespace CardServer.Games
                 return "Game Over";
             }
             // Provide values if the passing round is not complete
-            else if (!bidding_complete)
+            else if (!BiddingComplete)
             {
                 string response_str;
 
                 if (TrumpSelected)
                 {
-                    response_str = string.Format(
-                        "Selected trump {0:}, {1:} must discard a card",
-                        CurrentPlayer().ShortName(),
-                        Enum.GetName(
-                            typeof(Card.Suit),
-                            trump));
+                    response_str = $"Selected trump {trump}, {CurrentPlayer().ShortName} must discard a card";
                 }
-                else if (first_bid_round_complete)
+                else if (FirstBidRoundComplete)
                 {
-                    response_str = string.Format(
-                        "{0:} may select trump",
-                        CurrentPlayer().ShortName());
+                    response_str = $"{CurrentPlayer().ShortName} may select trump";
                 }
                 else
                 {
-                    response_str = string.Format(
-                        "{0:} may order-up the displayed card",
-                        CurrentPlayer().ShortName());
+                    response_str = $"{CurrentPlayer().ShortName} may order-up the displayed card";
                 }
 
-                return string.Format(
-                    "{0:} (Dealer {1:})",
-                    response_str,
-                    Dealer().ShortName());
+                return $"{response_str} (Dealer {Dealer().ShortName})";
             }
             // Otherwise, provide the player's turn
             else
             {
-                return string.Format(
-                    "{0:}'s Turn (Dealer {1:}, Trump {2:})",
-                    CurrentPlayer().ShortName(),
-                    Dealer().ShortName(),
-                    Enum.GetName(
-                        trump.GetType(),
-                        trump));
+                return $"{CurrentPlayer().ShortName}'s Turn (Dealer {Dealer().ShortName}, Trump {trump})";
             }
         }
 
@@ -730,15 +705,15 @@ namespace CardServer.Games
             MsgGameStatus msg = base.GetGameStatus(player: player);
 
             // Determine how to adjust for the bidding for the current player
-            if (!bidding_complete &&
+            if (!BiddingComplete &&
                 !TrumpSelected &&
                 CurrentPlayer().Equals(player))
             {
                 // Create  copy of the list
-                List<Card> center_cards = new List<Card>(msg.CenterActionCards);
+                List<Card> center_cards = new(msg.CenterActionCards);
 
                 // Add an action card to both pass, go alone, and pick up the card
-                if (!first_bid_round_complete)
+                if (!FirstBidRoundComplete)
                 {
                     center_cards.Add(Card.CreateSpecialCard(EuchreParameters.go_alone.data));
                     center_cards.Add(Card.CreateSpecialCard(EuchreParameters.pickup_card.data));
@@ -746,15 +721,17 @@ namespace CardServer.Games
                 }
                 else
                 {
-                    if (kitty_card.suit != Card.Suit.Club) center_cards.Add(Card.CreateSpecialCard(GameAction.select_clubs.data));
-                    if (kitty_card.suit != Card.Suit.Diamond) center_cards.Add(Card.CreateSpecialCard(GameAction.select_diamonds.data));
-                    if (kitty_card.suit != Card.Suit.Heart) center_cards.Add(Card.CreateSpecialCard(GameAction.select_hearts.data));
-                    if (kitty_card.suit != Card.Suit.Spade) center_cards.Add(Card.CreateSpecialCard(GameAction.select_spades.data));
-                    if (going_alone_skip_ind < 0)
+                    if (KittyCard == null) throw new NullReferenceException(nameof(KittyCard));
+
+                    if (KittyCard.CardSuit != Card.Suit.Club) center_cards.Add(Card.CreateSpecialCard(GameAction.select_clubs.data));
+                    if (KittyCard.CardSuit != Card.Suit.Diamond) center_cards.Add(Card.CreateSpecialCard(GameAction.select_diamonds.data));
+                    if (KittyCard.CardSuit != Card.Suit.Heart) center_cards.Add(Card.CreateSpecialCard(GameAction.select_hearts.data));
+                    if (KittyCard.CardSuit != Card.Suit.Spade) center_cards.Add(Card.CreateSpecialCard(GameAction.select_spades.data));
+                    if (GoingAloneSkipInd < 0)
                     {
                         center_cards.Add(Card.CreateSpecialCard(EuchreParameters.go_alone.data));
 
-                        if (!screw_the_dealer || !CurrentPlayer().Equals(Dealer()))
+                        if (!ScrewTheDealer || !CurrentPlayer().Equals(Dealer()))
                         {
                             center_cards.Add(Card.CreateSpecialCard(EuchreParameters.skip.data));
                         }

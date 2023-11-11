@@ -1,4 +1,4 @@
-﻿namespace CardClient
+﻿namespace CardClient.Forms
 {
     partial class JoinLobby
     {
@@ -47,7 +47,7 @@
             this.BtnNorth.TabIndex = 0;
             this.BtnNorth.Text = "North";
             this.BtnNorth.UseVisualStyleBackColor = true;
-            this.BtnNorth.Click += new System.EventHandler(this.BtnNorth_Click);
+            this.BtnNorth.Click += new System.EventHandler(this.BtnDirection_Click);
             // 
             // BtnWest
             // 
@@ -58,7 +58,7 @@
             this.BtnWest.TabIndex = 1;
             this.BtnWest.Text = "West";
             this.BtnWest.UseVisualStyleBackColor = true;
-            this.BtnWest.Click += new System.EventHandler(this.BtnWest_Click);
+            this.BtnWest.Click += new System.EventHandler(this.BtnDirection_Click);
             // 
             // BtnEast
             // 
@@ -69,7 +69,7 @@
             this.BtnEast.TabIndex = 2;
             this.BtnEast.Text = "East";
             this.BtnEast.UseVisualStyleBackColor = true;
-            this.BtnEast.Click += new System.EventHandler(this.BtnEast_Click);
+            this.BtnEast.Click += new System.EventHandler(this.BtnDirection_Click);
             // 
             // BtnSouth
             // 
@@ -80,13 +80,13 @@
             this.BtnSouth.TabIndex = 3;
             this.BtnSouth.Text = "South";
             this.BtnSouth.UseVisualStyleBackColor = true;
-            this.BtnSouth.Click += new System.EventHandler(this.BtnSouth_Click);
+            this.BtnSouth.Click += new System.EventHandler(this.BtnDirection_Click);
             // 
             // tmrStatusUpdate
             // 
             this.tmrStatusUpdate.Enabled = true;
             this.tmrStatusUpdate.Interval = 10000;
-            this.tmrStatusUpdate.Tick += new System.EventHandler(this.tmrStatusUpdate_Tick);
+            this.tmrStatusUpdate.Tick += new System.EventHandler(this.StatusUpdateTick);
             // 
             // BtnLeave
             // 

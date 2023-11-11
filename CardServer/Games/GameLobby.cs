@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using CardGameLibrary.GameParameters;
 using CardGameLibrary.Messages;
@@ -14,7 +15,7 @@ namespace CardServer.Games
         /// <summary>
         /// Stores the list of players present in the lobby
         /// </summary>
-        readonly List<GamePlayer> lobby_players = new List<GamePlayer>();
+        List<GamePlayer?> LobbyPlayers { get; } = new();
 
         /// <summary>
         /// Provides the game type of the lobby for creating a new game
@@ -29,7 +30,7 @@ namespace CardServer.Games
         /// <summary>
         /// Determines the date time of the game for eventual timeout if a game isn't started
         /// </summary>
-        readonly DateTime create_time;
+        DateTime CreateTime { get; }
 
         /// <summary>
         /// Constructs a game lobby that will allow players to join/leave into different positions
@@ -39,17 +40,17 @@ namespace CardServer.Games
         public GameLobby(int game_id, GameTypes game_type)
         {
             // Set input parameters
-            this.GameID = game_id;
-            this.GameType = game_type;
+            GameID = game_id;
+            GameType = game_type;
 
             // Initialize the lobby players as initially empty
             for (int i = 0; i < 4; ++i)
             {
-                lobby_players.Add(null);
+                LobbyPlayers.Add(null);
             }
 
             // Setup the creation time
-            create_time = DateTime.UtcNow;
+            CreateTime = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -66,23 +67,22 @@ namespace CardServer.Games
             // Otherwise, attempt to create the game
             else
             {
+                // Create the new non-null lobby players
+                var lobbyPlayers = LobbyPlayers.Select(x => x ?? throw new NullReferenceException(nameof(LobbyPlayers))).OfType<GamePlayer>().ToList();
+
                 // Create the game based on the game type
                 // Otherwise, return null
                 return GameType switch
                 {
                     GameTypes.Hearts => new Hearts(
                         game_id: GameID,
-                        players: lobby_players.ToArray()),
+                        players: lobbyPlayers.ToArray()),
                     GameTypes.Euchre => new Euchre(
-                        game_id: GameID,
-                        players: lobby_players.ToArray()),
+                        gameId: GameID,
+                        players: lobbyPlayers.ToArray()),
                     _ => throw new GameException(
                         GameID,
-                        string.Format(
-                            "Cannot convert lobby to game for {0:}",
-                            Enum.GetName(
-                                enumType: typeof(GameTypes),
-                                value: GameType)))
+                        $"Cannot convert lobby to game for {GameType}")
                 };
             }
         }
@@ -95,15 +95,14 @@ namespace CardServer.Games
         {
             // Check if each player is provided/valid
             // If only one player isn't provided, the lobby will not be ready
-            bool lobby_ready = true;
-            foreach (GamePlayer p in lobby_players)
+            foreach (GamePlayer? p in LobbyPlayers)
             {
                 if (p == null)
                 {
-                    lobby_ready = false;
+                    return false;
                 }
             }
-            return lobby_ready;
+            return true;
         }
 
         /// <summary>
@@ -113,7 +112,7 @@ namespace CardServer.Games
         public bool IsEmpty()
         {
             // Iterate over each player to see if any are not null/set
-            foreach (GamePlayer p in lobby_players)
+            foreach (GamePlayer? p in LobbyPlayers)
             {
                 if (p != null) return false;
             }
@@ -129,17 +128,17 @@ namespace CardServer.Games
         /// <returns>True if the player was successfully added</returns>
         public bool JoinLobby(GamePlayer player, LobbyPositions pos)
         {
-            if (lobby_players.Contains(player))
+            if (LobbyPlayers.Contains(player))
             {
                 return false;
             }
-            else if (lobby_players[(int)pos] != null)
+            else if (LobbyPlayers[(int)pos] != null)
             {
                 return false;
             }
             else
             {
-                lobby_players[(int)pos] = player;
+                LobbyPlayers[(int)pos] = player;
                 return true;
             }
         }
@@ -151,11 +150,11 @@ namespace CardServer.Games
         /// <returns>True if the player could be successfully removed from the lobby</returns>
         public bool LeaveLobby(GamePlayer player)
         {
-            for (int i = 0; i < lobby_players.Count; ++i)
+            for (int i = 0; i < LobbyPlayers.Count; ++i)
             {
-                if (player.Equals(lobby_players[i]))
+                if (player.Equals(LobbyPlayers[i]))
                 {
-                    lobby_players[i] = null;
+                    LobbyPlayers[i] = null;
                     return true;
                 }
             }
@@ -168,14 +167,7 @@ namespace CardServer.Games
         /// <returns>The lobby status message to send to clients</returns>
         public MsgLobbyStatus GetLobbyStatus()
         {
-            MsgLobbyStatus msg = new MsgLobbyStatus()
-            {
-                GameID = GameID,
-                Players = new List<GamePlayer>(lobby_players),
-                GameType = GameType,
-                LobbyReady = LobbyReady()
-            };
-            return msg;
+            return new MsgLobbyStatus(GameID, GameType, LobbyReady(), LobbyPlayers);
         }
 
         /// <summary>
@@ -184,7 +176,7 @@ namespace CardServer.Games
         /// <returns>True if the lobby has timed out (defualt 15 minutes)</returns>
         public bool Timeout()
         {
-            return DateTime.UtcNow - create_time > TimeSpan.FromMinutes(15);
+            return DateTime.UtcNow - CreateTime > TimeSpan.FromMinutes(15);
         }
     }
 }

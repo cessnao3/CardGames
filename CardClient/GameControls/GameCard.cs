@@ -13,10 +13,10 @@ namespace CardClient.GameControls
 {
     public partial class GameCard : UserControl
     {
-        public Card base_card { get; private set; }
-        bool card_shown = false;
+        public Card? BaseCard { get; private set; }
+        bool CardShown { get; set; } = false;
 
-        public GameCard(Card card=null)
+        public GameCard(Card? card = null)
         {
             InitializeComponent();
 
@@ -24,13 +24,13 @@ namespace CardClient.GameControls
             SetCard(card);
         }
 
-        public void SetCard(Card c)
+        public void SetCard(Card? c)
         {
-            base_card = c;
+            BaseCard = c;
 
             if (c != null && c.IsSpecial())
             {
-                LblSpecialLabel.Text = CardGameLibrary.GameParameters.GameAction.action_database[c.data].name;
+                LblSpecialLabel.Text = CardGameLibrary.GameParameters.GameAction.action_database[c.Data].name;
                 LblSpecialLabel.Visible = true;
             }
             else
@@ -43,38 +43,31 @@ namespace CardClient.GameControls
 
         public void SetFaceShown(bool face_shown)
         {
-            card_shown = face_shown;
+            CardShown = face_shown;
             UpdatePicture();
         }
 
         public void UpdatePicture()
         {
-            Bitmap bmp_to_set;
+            Bitmap? bmp_to_set;
 
-            if (base_card != null && base_card.IsSpecial())
+            if (BaseCard != null && BaseCard.IsSpecial())
             {
                 bmp_to_set = Properties.Resources.card_blank;
             }
-            else if (base_card == null || !card_shown)
+            else if (BaseCard == null || !CardShown)
             {
                 bmp_to_set = Properties.Resources.card_back;
             }
             else
             {
-                string suit_name = base_card.suit.ToString().ToLower();
-                string value_name = base_card.value.ToString().ToLower();
-
-                string card_name = string.Format(
-                    "{0:s}_{1:s}",
-                    suit_name,
-                    value_name);
-
-                bmp_to_set = (Bitmap)Properties.Resources.ResourceManager.GetObject(card_name);
+                string card_name = $"{BaseCard.CardSuit.ToString().ToLower()}_{BaseCard.CardValue.ToString().ToLower()}";
+                bmp_to_set = (Bitmap?)Properties.Resources.ResourceManager.GetObject(card_name);
             }
 
             PicCard.Image = bmp_to_set;
 
-            Visible = base_card != null;
+            Visible = BaseCard != null;
         }
 
         public void SetWidth(int width)

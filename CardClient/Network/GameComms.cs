@@ -14,17 +14,17 @@ using System.IO;
 
 namespace CardClient.Network
 {
-    public class GameComms
+    public sealed class GameComms
     {
-        protected ClientStruct client_struct;
+        private ClientStruct? ClientStruct { get; set; }
 
-        protected static GameComms gc_instance = new GameComms();
+        private static GameComms CommsInstance { get; } = new();
 
-        protected GamePlayer player;
+        private GamePlayer? Player { get; set; }
 
-        bool failed = false;
+        public bool Failed { get; private set; } = false;
 
-        IPAddress host;
+        IPAddress Host { get; set; } = IPAddress.Loopback;
 
         public static bool SetHost(string hostname)
         {
@@ -32,7 +32,7 @@ namespace CardClient.Network
 
             if (addrs.Length > 0)
             {
-                gc_instance.host = addrs[0];
+                CommsInstance.Host = addrs[0];
                 return true;
             }
             else
@@ -41,20 +41,25 @@ namespace CardClient.Network
             }
         }
 
-        protected GameComms()
+        private GameComms()
         {
             // Do Nothing
         }
 
         static public void SetPlayer(GamePlayer p)
         {
-            gc_instance.player = p;
+            CommsInstance.Player = p;
         }
 
         static public bool SetupSSL()
         {
-            SslStream ssl_stream = new SslStream(
-                gc_instance.client_struct.stream,
+            if (CommsInstance.ClientStruct == null)
+            {
+                return false;
+            }
+
+            SslStream ssl_stream = new(
+                CommsInstance.ClientStruct.NetworkStream,
                 leaveInnerStreamOpen: false,
                 userCertificateValidationCallback: new RemoteCertificateValidationCallback(ValidateServerCertificate),
                 userCertificateSelectionCallback: null);
@@ -65,30 +70,30 @@ namespace CardClient.Network
             }
             catch (AuthenticationException e)
             {
-                Console.WriteLine("Exception: {0}", e.Message);
+                Console.WriteLine($"Exception: {e.Message}");
                 if (e.InnerException != null)
                 {
-                    Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                    Console.WriteLine($"Inner exception: {e.InnerException.Message}");
                 }
                 Console.WriteLine("Authentication failed - closing the connection.");
-                gc_instance.client_struct.Close();
+                CommsInstance.ClientStruct.Close();
                 return false;
             }
             catch (IOException)
             {
                 Console.WriteLine("Timeout waiting for server");
-                gc_instance.client_struct.Close();
+                CommsInstance.ClientStruct.Close();
                 return false;
             }
 
-            gc_instance.client_struct.SetStream(ssl_stream);
+            CommsInstance.ClientStruct.SetStream(ssl_stream);
             return true;
         }
 
         public static bool ValidateServerCertificate(
               object sender,
-              X509Certificate certificate,
-              X509Chain chain,
+              X509Certificate? certificate,
+              X509Chain? chain,
               SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None)
@@ -96,6 +101,7 @@ namespace CardClient.Network
                 return true;
             }
             else if (
+                chain != null && 
                 sslPolicyErrors == SslPolicyErrors.RemoteCertificateChainErrors &&
                 chain.ChainStatus.Length == 1 &&
                 chain.ChainStatus.First().Status == X509ChainStatusFlags.UntrustedRoot)
@@ -106,62 +112,62 @@ namespace CardClient.Network
             else
             {
                 // Print out error messages
-                Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
+                Console.WriteLine($"Certificate error: {sslPolicyErrors}");
 
                 // Do not allow this client to communicate with unauthenticated servers.
                 return false;
             }
         }
 
-        static public GamePlayer GetPlayer()
+        static public GamePlayer? GetPlayer()
         {
-            return gc_instance.player;
+            return CommsInstance.Player;
         }
 
         static public void ResetSocket()
         {
-            if (gc_instance.client_struct != null)
+            if (CommsInstance.ClientStruct != null)
             {
-                gc_instance.client_struct.Close();
-                gc_instance.client_struct = null;
+                CommsInstance.ClientStruct.Close();
+                CommsInstance.ClientStruct = null;
             }
 
-            TcpClient client = new TcpClient();
-            client.Connect(gc_instance.host, 8088);
+            TcpClient client = new();
+            client.Connect(CommsInstance.Host, 8088);
 
-            gc_instance.client_struct = new ClientStruct(client);
-        }
-
-        static public bool Failed()
-        {
-            return gc_instance.failed;
+            CommsInstance.ClientStruct = new ClientStruct(client);
         }
 
         static public void SendMessage(MsgBase msg)
         {
-            if (gc_instance.client_struct == null) return;
+            if (CommsInstance.ClientStruct == null) return;
 
             try
             {
-                MessageReader.SendMessage(gc_instance.client_struct, msg);
+                MessageReader.SendMessage(CommsInstance.ClientStruct, msg);
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
-                gc_instance.failed = true;
+                CommsInstance.Failed = true;
             }
         }
 
-        static public MsgBase ReceiveMessage()
+        static public bool HasFailed()
         {
-            if (gc_instance.client_struct == null) return null;
+            return CommsInstance.Failed;
+        }
+
+        static public MsgBase? ReceiveMessage()
+        {
+            if (CommsInstance.ClientStruct == null) return null;
 
             try
             {
-                return MessageReader.ReadMessage(gc_instance.client_struct);
+                return MessageReader.ReadMessage(CommsInstance.ClientStruct);
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
-                gc_instance.failed = true;
+                CommsInstance.Failed = true;
             }
 
             return null;

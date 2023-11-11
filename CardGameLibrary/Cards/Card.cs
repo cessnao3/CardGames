@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
+using static CardGameLibrary.Cards.Card;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CardGameLibrary.Cards
 {
@@ -43,17 +46,30 @@ namespace CardGameLibrary.Cards
         /// <summary>
         /// Defines the card's suit
         /// </summary>
-        public Suit suit { get; set; }
+        [JsonInclude]
+        public Suit CardSuit { get; set; }
 
         /// <summary>
         /// Defines the card's value
         /// </summary>
-        public Value value { get; set; }
+        [JsonInclude]
+        public Value CardValue { get; set; }
 
         /// <summary>
         /// Sets the data parameter associated with a given card
         /// </summary>
-        public int data { get; set; }
+        [JsonInclude]
+        public int Data { get; set; }
+
+        /// <summary>
+        /// Initializes a card with a suit and value
+        /// </summary>
+        public Card()
+        {
+            CardSuit = Suit.Club;
+            CardValue = Value.Two;
+            Data = -1;
+        }
 
         /// <summary>
         /// Initializes a card with a suit and value
@@ -63,18 +79,18 @@ namespace CardGameLibrary.Cards
         /// <param name="data">Defines any special data associated with the card</param>
         public Card(Suit suit, Value value, int data=-1)
         {
-            this.suit = suit;
-            this.value = value;
-            this.data = data;
+            CardSuit = suit;
+            CardValue = value;
+            Data = data;
         }
 
         /// <summary>
         /// Provides a relative card value based on the suit and card value
         /// </summary>
         /// <returns>An integer with a card value so that suits are separated</returns>
-        public int CardValue()
+        public int CardValueSorting()
         {
-            return ((int)suit) * 32 + (int)value;
+            return ((int)CardSuit) * 32 + (int)CardValue;
         }
 
         /// <summary>
@@ -83,7 +99,7 @@ namespace CardGameLibrary.Cards
         /// <returns>Hash code based on the card suit and value</returns>
         public override int GetHashCode()
         {
-            return CardValue().GetHashCode();
+            return CardValueSorting().GetHashCode();
         }
 
         /// <summary>
@@ -91,11 +107,11 @@ namespace CardGameLibrary.Cards
         /// </summary>
         /// <param name="obj">Object to compare agains</param>
         /// <returns>true if the objects are equal</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is Card)
+            if (obj is Card card)
             {
-                return Equals((Card)obj);
+                return Equals(card);
             }
             else
             {
@@ -110,7 +126,7 @@ namespace CardGameLibrary.Cards
         /// <returns>true if the card's have equal values and suit</returns>
         public bool Equals(Card c)
         {
-            return suit == c.suit && value == c.value;
+            return CardSuit == c.CardSuit && CardValue == c.CardValue;
         }
 
         /// <summary>
@@ -121,7 +137,7 @@ namespace CardGameLibrary.Cards
         /// <returns>Equal if 0, c1 < c2 if < 0</returns>
         public static int DefaultComparison(Card c1, Card c2)
         {
-            return c1.CardValue() - c2.CardValue();
+            return c1.CardValueSorting() - c2.CardValueSorting();
         }
 
         /// <summary>
@@ -130,10 +146,7 @@ namespace CardGameLibrary.Cards
         /// <returns>String of the card name/value</returns>
         public override string ToString()
         {
-            return string.Format(
-                "{0:s} of {1:s}s",
-                value.ToString(),
-                suit.ToString());
+            return $"{CardValue} of {CardSuit}s";
         }
 
         /// <summary>
@@ -143,7 +156,7 @@ namespace CardGameLibrary.Cards
         /// <returns>True if the card is special and the data parameter is set</returns>
         public bool IsSpecial()
         {
-            return data >= 0;
+            return Data >= 0;
         }
 
         /// <summary>
@@ -153,7 +166,9 @@ namespace CardGameLibrary.Cards
         /// <returns></returns>
         static public Card CreateSpecialCard(int data)
         {
-            // Create a new card and set the data
+            // Create a new ca
+            //
+            // rset the data
             return new Card(
                 suit: Suit.Club,
                 value: Value.Two,

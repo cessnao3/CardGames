@@ -1,4 +1,4 @@
-﻿namespace CardClient
+﻿namespace CardClient.Forms
 {
     partial class GameWindow
     {
@@ -68,21 +68,21 @@
             this.refreshToolStripMenuItem.Name = "refreshToolStripMenuItem";
             this.refreshToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.refreshToolStripMenuItem.Text = "Refresh";
-            this.refreshToolStripMenuItem.Click += new System.EventHandler(this.refreshToolStripMenuItem_Click);
+            this.refreshToolStripMenuItem.Click += new System.EventHandler(this.RefreshMenuItemPressed);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.exitToolStripMenuItem.Text = "Return";
-            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            this.exitToolStripMenuItem.Click += new System.EventHandler(this.ExitMenuItemPressed);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
             this.aboutToolStripMenuItem.Text = "About";
-            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutMenuItemPressed);
             // 
             // statusStrip1
             // 
@@ -104,7 +104,7 @@
             // 
             this.tmrGameUpdate.Enabled = true;
             this.tmrGameUpdate.Interval = 10000;
-            this.tmrGameUpdate.Tick += new System.EventHandler(this.tmrGameUpdate_Tick);
+            this.tmrGameUpdate.Tick += new System.EventHandler(this.GameUpdateTick);
             // 
             // gameScreen
             // 
@@ -116,7 +116,7 @@
             this.gameScreen.Name = "gameScreen";
             this.gameScreen.Size = new System.Drawing.Size(814, 449);
             this.gameScreen.TabIndex = 1;
-            this.gameScreen.Click += new System.EventHandler(this.gameScreen_Click);
+            this.gameScreen.Click += new System.EventHandler(this.GameScreenClick);
             // 
             // GameWindow
             // 

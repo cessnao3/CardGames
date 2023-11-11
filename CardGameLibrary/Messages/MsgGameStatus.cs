@@ -1,7 +1,10 @@
 ﻿using CardGameLibrary.Cards;
+using CardGameLibrary.GameParameters;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace CardGameLibrary.Messages
 {
@@ -13,57 +16,101 @@ namespace CardGameLibrary.Messages
         /// <summary>
         /// Defines the ID of the game
         /// </summary>
-        public int GameID { get; set; }
+        [JsonInclude]
+        public int GameID { get; private set; }
 
         /// <summary>
         /// Defines the game type of the game
         /// </summary>
-        public int GameType { get; set; }
+        [JsonInclude]
+        public int GameType { get; private set; }
 
         /// <summary>
         /// The players to read in
         /// </summary>
-        public List<GameParameters.GamePlayer> Players { get; set; }
+        [JsonInclude]
+        public IReadOnlyList<GamePlayer> Players { get; private set; }
 
         /// <summary>
         /// The hands for each player
         /// </summary>
-        public List<Hand> Hands { get; set; }
+        [JsonInclude]
+        public IReadOnlyList<Hand> Hands { get; private set; }
 
         /// <summary>
         /// The center pool of cards for each player
         /// </summary>
-        public List<Card> PlayedCardsByPlayer { get; set; }
+        [JsonInclude]
+        public IReadOnlyList<Card?> PlayedCardsByPlayer { get; private set; }
 
         /// <summary>
         /// The center cards that can be used for selecting trump or
         /// performing other similar actions
         /// </summary>
-        public List<Card> CenterActionCards { get; set; }
+        [JsonInclude]
+        public IReadOnlyList<Card> CenterActionCards { get; set; }
 
         /// <summary>
         /// The current score for each player
         /// </summary>
-        public List<int> Scores { get; set; }
+        [JsonInclude]
+        public IReadOnlyList<int> Scores { get; private set; }
 
         /// <summary>
         /// Defines the current game status for different games
         /// </summary>
+        [JsonInclude]
         public string CurrentGameStatus { get; set; }
 
         /// <summary>
         /// The current player needing to play
         /// </summary>
-        public int CurrentPlayer { get; set; }
+        [JsonInclude]
+        public int CurrentPlayer { get; private set; }
 
         /// <summary>
         /// Default hearts game status constructor
         /// </summary>
+        [JsonConstructor]
         public MsgGameStatus() : base(MessageTypeID.GameStatus)
         {
             // Initialize the game type and ID
             GameID = -1;
             GameType = -1;
+
+            Players = Array.Empty<GamePlayer>();
+            Hands = Array.Empty<Hand>();
+            CurrentGameStatus = string.Empty;
+            CurrentPlayer = -1;
+            Scores = Array.Empty<int>();
+            PlayedCardsByPlayer = Array.Empty<Card?>();
+            CenterActionCards = Array.Empty<Card>();
+        }
+
+        /// <summary>
+        /// Default hearts game status constructor
+        /// </summary>
+        public MsgGameStatus(
+            int gameId,
+            int gameType,
+            IEnumerable<GamePlayer> players,
+            IEnumerable<Hand> hands,
+            string status,
+            int currentPlayer,
+            IEnumerable<int> scores,
+            IEnumerable<Card?> playedCards,
+            IEnumerable<Card> centerCards) : base(MessageTypeID.GameStatus)
+        {
+            // Initialize the game type and ID
+            GameID = gameId;
+            GameType = gameType;
+            Players = players.ToArray();
+            Hands = hands.ToArray();
+            CurrentGameStatus = status;
+            CurrentPlayer = currentPlayer;
+            Scores = scores.ToArray();
+            PlayedCardsByPlayer = playedCards.ToArray();
+            CenterActionCards = centerCards.ToArray();
         }
 
         /// <summary>

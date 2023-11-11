@@ -29,7 +29,8 @@ namespace CardGameLibrary.Messages
         /// <summary>
         /// Defines the type of the message
         /// </summary>
-        public MessageTypeID MessageType { get; set; }
+        [JsonInclude]
+        public MessageTypeID MessageType { get; private set; }
 
         /// <summary>
         /// Checks whether the message is valid

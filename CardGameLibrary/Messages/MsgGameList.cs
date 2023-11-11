@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace CardGameLibrary.Messages
 {
@@ -12,35 +14,37 @@ namespace CardGameLibrary.Messages
         /// <summary>
         /// Defines the item parameters for each list
         /// </summary>
-        public class ListItem
-        {
-            /// <summary>
-            /// Defines the game ID value
-            /// </summary>
-            public int GameIDValue { get; set; }
-
-            /// <summary>
-            /// Defines the game type
-            /// </summary>
-            public int GameType { get; set; }
-        }
+        public record ListItem(int GameIDValue, int GameType);
 
         /// <summary>
         /// Defines the list of lobbies, by ID, that may be joined
         /// </summary>
-        public List<ListItem> Lobbies { get; set; }
+        [JsonInclude]
+        public IReadOnlyList<ListItem> Lobbies { get; private set; }
 
         /// <summary>
         /// Defines the list of games, by ID, that may be played
         /// </summary>
-        public List<ListItem> Games { get; set; }
+        [JsonInclude]
+        public IReadOnlyList<ListItem> Games { get; private set; }
+
+        /// <summary>
+        /// Define the parameterless constructor
+        /// </summary>
+        [JsonConstructor]
+        public MsgGameList() : base(MessageTypeID.GameList)
+        {
+            Lobbies = Array.Empty<ListItem>();
+            Games = Array.Empty<ListItem>();
+        }
 
         /// <summary>
         /// Defines the game list message/response
         /// </summary>
-        public MsgGameList() : base(MessageTypeID.GameList)
+        public MsgGameList(IEnumerable<ListItem> lobbies, IEnumerable<ListItem> games) : base(MessageTypeID.GameList)
         {
-            // Empty Constructor
+            Lobbies = lobbies.ToArray();
+            Games = games.ToArray();
         }
 
         /// <summary>

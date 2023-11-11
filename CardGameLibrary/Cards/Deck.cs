@@ -12,24 +12,24 @@ namespace CardGameLibrary.Cards
         /// <summary>
         /// Defines the list of cards to play with
         /// </summary>
-        public Card[] cards { get; protected set; }
+        public Card[] Cards { get; protected set; }
 
         /// <summary>
         /// Defines the next card to deal
         /// </summary>
-        protected int current_card_index = 0;
+        protected int CurrentCardIndex { get; set; } = 0;
 
         /// <summary>
         /// Provides random number generation for shuffling
         /// </summary>
-        private static Random rng = new Random();
+        private static Random Rng { get; } = new Random();
 
         /// <summary>
         /// Property to return the number of cards in the deck
         /// </summary>
         public int Length
         {
-            get { return cards.Length; }
+            get { return Cards.Length; }
         }
 
         /// <summary>
@@ -39,27 +39,27 @@ namespace CardGameLibrary.Cards
         /// <param name="values">The cards to generate a deck with. If null, uses all available</param>
         /// <param name="suits">The suits to generate a deck with. If null, uses all available</param>
         public Deck(
-            Card.Value[] values=null,
-            Card.Suit[] suits=null)
+            Card.Value[]? values = null,
+            Card.Suit[]? suits = null)
         {
             // Create a list to add the cards to
-            List<Card> card_list = new List<Card>();
+            List<Card> cardList = new();
 
             // Replace suits or values if null
-            if (suits == null) suits = (Card.Suit[])Enum.GetValues(typeof(Card.Suit));
-            if (values == null) values = (Card.Value[])Enum.GetValues(typeof(Card.Value));
+            suits ??= (Card.Suit[])Enum.GetValues(typeof(Card.Suit));
+            values ??= (Card.Value[])Enum.GetValues(typeof(Card.Value));
 
             // Create the cards for the provided suits and values
             foreach (Card.Suit s in suits)
             {
                 foreach (Card.Value v in values)
                 {
-                    card_list.Add(new Card(suit: s, value: v));
+                    cardList.Add(new Card(suit: s, value: v));
                 }
             }
 
             // Append to an array
-            cards = card_list.ToArray();
+            Cards = cardList.ToArray();
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace CardGameLibrary.Cards
         public Deck(Card[] cards)
         {
             // Simply set the card provided
-            this.cards = cards;
+            this.Cards = cards;
         }
 
         /// <summary>
@@ -79,11 +79,11 @@ namespace CardGameLibrary.Cards
         public bool HasDuplicateCards()
         {
             // Check for any duplicates, return true if so
-            for (int i = 0; i < cards.Length; ++i)
+            for (int i = 0; i < Cards.Length; ++i)
             {
-                for (int j = i + 1; j < cards.Length; ++i)
+                for (int j = i + 1; j < Cards.Length; ++i)
                 {
-                    if (cards[i] == cards[j]) return true;
+                    if (Cards[i] == Cards[j]) return true;
                 }
             }
 
@@ -98,23 +98,21 @@ namespace CardGameLibrary.Cards
         public void Shuffle()
         {
             // Check the length of the array
-            int n = cards.Length;
+            int n = Cards.Length;
 
             // Perform a Fisher-Yates shuffle
             while (n > 1)
             {
                 // Get the next random number in the sequence
                 n--;
-                int k = rng.Next(n + 1);
+                int k = Rng.Next(n + 1);
 
                 // Perform a swap
-                Card tmp = cards[k];
-                cards[k] = cards[n];
-                cards[n] = tmp;
+                (Cards[n], Cards[k]) = (Cards[k], Cards[n]);
             }
 
             // Reset the card index
-            current_card_index = 0;
+            CurrentCardIndex = 0;
         }
 
         /// <summary>
@@ -123,16 +121,16 @@ namespace CardGameLibrary.Cards
         /// <returns>true if a card can be dealt</returns>
         public bool HasNext()
         {
-            return current_card_index < cards.Length;
+            return CurrentCardIndex < Cards.Length;
         }
 
         /// <summary>
         /// Provides the next card in the deck if available
         /// </summary>
         /// <returns>next Card if available, otherwise null</returns>
-        public Card Next()
+        public Card? Next()
         {
-            return HasNext() ? cards[current_card_index++] : null;
+            return HasNext() ? Cards[CurrentCardIndex++] : null;
         }
     }
 }

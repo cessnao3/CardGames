@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace CardClient
+namespace CardClient.Forms
 {
     public partial class AboutForm : Form
     {
@@ -16,7 +16,7 @@ namespace CardClient
         {
             InitializeComponent();
 
-            LblVersion.Text = string.Format("Version: {0:}", typeof(Program).Assembly.GetName().Version.ToString());
+            LblVersion.Text = $"Version: {typeof(Program).Assembly?.GetName().Version?.ToString() ?? "Unknown"}";
         }
 
         private void LblCardLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -26,7 +26,7 @@ namespace CardClient
             System.Diagnostics.Process.Start(LblCardLink.Text);
         }
 
-        private void btnClose_Click(object sender, EventArgs e)
+        private void BtnClose_Click(object sender, EventArgs e)
         {
             Close();
         }

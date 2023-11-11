@@ -12,12 +12,12 @@ using System.Windows.Forms;
 using CardGameLibrary.Messages;
 using CardGameLibrary.Network;
 
-namespace CardClient
+namespace CardClient.Forms
 {
     public partial class LoginWindow : Form
     {
-        public string output_username { get; private set; }
-        public string output_password { get; private set; }
+        public string? OutputUsername { get; private set; }
+        public string? OutputPassword { get; private set; }
 
         public LoginWindow()
         {
@@ -39,32 +39,23 @@ namespace CardClient
                 MessageBox.Show(this, "Please check hostname");
             }
 
-            bool is_new_user = (Button)sender == BtnNew;
+            bool isNewUser = (Button)sender == BtnNew;
 
             if (username.Length > 0 && password.Length > 0)
             {
-                output_username = username;
-                output_password = password;
+                // Save output values
+                OutputUsername = username;
+                OutputPassword = password;
 
-                MsgLogin msg = new MsgLogin();
-                msg.Action = (is_new_user) ? MsgLogin.ActionType.NewUser : MsgLogin.ActionType.LoginUser;
-                msg.Username = username;
-                msg.PasswordHash = password;
-
-                using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
+                // Convert the bytes to a hex string
+                StringBuilder sb = new();
+                foreach (var b in System.Security.Cryptography.MD5.HashData(Encoding.ASCII.GetBytes(OutputPassword)))
                 {
-                    // Convert the password to bytes
-                    byte[] pw_bytes = Encoding.ASCII.GetBytes(output_password);
-                    byte[] hash_bytes = md5.ComputeHash(pw_bytes);
-
-                    // Convert the bytes to a hex string
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < hash_bytes.Length; i++)
-                    {
-                        sb.Append(hash_bytes[i].ToString("x2"));
-                    }
-                    msg.PasswordHash = sb.ToString();
+                    sb.Append(b.ToString("x2"));
                 }
+
+                // Create the message
+                MsgLogin msg = new(isNewUser ? MsgLogin.ActionType.NewUser : MsgLogin.ActionType.LoginUser, username, sb.ToString());
 
                 try
                 {
@@ -87,11 +78,11 @@ namespace CardClient
 
                 Network.GameComms.SendMessage(msg);
 
-                MsgServerResponse msg_response = null;
+                MsgServerResponse? msg_response = null;
 
                 for (int i = 0; i < 10; ++i)
                 {
-                    MsgBase msg_b = Network.GameComms.ReceiveMessage();
+                    MsgBase? msg_b = Network.GameComms.ReceiveMessage();
 
                     if (msg_b == null)
                     {
@@ -99,16 +90,16 @@ namespace CardClient
                     }
                     else
                     {
-                        if (msg_b is MsgServerResponse)
+                        if (msg_b is MsgServerResponse resp)
                         {
-                            msg_response = (MsgServerResponse)msg_b;
+                            msg_response = resp;
                         }
 
                         break;
                     }
                 }
 
-                if (msg_response != null && msg_response.ResponseCode == ResponseCodes.OK)
+                if (msg_response != null && msg_response.ResponseCode == MsgServerResponse.ResponseCodes.OK)
                 {
                     Network.GameComms.SetPlayer(msg_response.User);
                     DialogResult = DialogResult.OK;

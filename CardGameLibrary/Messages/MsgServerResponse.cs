@@ -1,40 +1,53 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace CardGameLibrary.Messages
 {
-    /// <summary>
-    /// Defines default server response codes
-    /// </summary>
-    public enum ResponseCodes
-    {
-        Fail,
-        Unauthorized,
-        OK
-    };
-
     /// <summary>
     /// Defines the default server response messages
     /// </summary>
     public class MsgServerResponse : MsgBase
     {
         /// <summary>
+        /// Defines default server response codes
+        /// </summary>
+        public enum ResponseCodes
+        {
+            Fail,
+            Unauthorized,
+            OK
+        };
+
+        /// <summary>
         /// The server response
         /// </summary>
-        public ResponseCodes ResponseCode { get; set; }
+        [JsonInclude]
+        public ResponseCodes ResponseCode { get; private set; }
 
         /// <summary>
         /// Defines the current user parameter
         /// </summary>
-        public GameParameters.GamePlayer User { get; set; }
+        [JsonInclude]
+        public GameParameters.GamePlayer User { get; private set; }
+
+        /// <summary>
+        /// Define the JSON empty constructor
+        /// </summary>
+        [JsonConstructor]
+        public MsgServerResponse() : base(MessageTypeID.ServerResponse)
+        {
+            User = new(string.Empty);
+        }
 
         /// <summary>
         /// Constructor to set the server response
         /// </summary>
-        public MsgServerResponse() : base(MessageTypeID.ServerResponse)
+        public MsgServerResponse(GameParameters.GamePlayer user, ResponseCodes resp) : base(MessageTypeID.ServerResponse)
         {
-            // Empty Constructor
+            ResponseCode = resp;
+            User = user;
         }
 
         /// <summary>

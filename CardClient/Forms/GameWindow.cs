@@ -9,42 +9,38 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using CardGameLibrary.Messages;
 
-namespace CardClient
+namespace CardClient.Forms
 {
     public partial class GameWindow : Form
     {
-        int game_id;
+        int GameID { get; }
 
-        public GameWindow(int game_id)
+        public GameWindow(int gameId)
         {
             InitializeComponent();
 
-            this.game_id = game_id;
-            gameScreen.SetGameID(this.game_id);
+            GameID = gameId;
+            gameScreen.SetGameID(GameID);
 
-            tmrGameUpdate_Tick(null, null);
+            GameUpdateTick(null, EventArgs.Empty);
 
-            Text = "Game - " + Network.GameComms.GetPlayer().CapitalizedName();
+            Text = $"Game - {Network.GameComms.GetPlayer()?.CapitalizedName ?? "<<UNKNOWN>>"}";
         }
 
-        private void gameScreen_Click(object sender, EventArgs e)
+        private void GameScreenClick(object sender, EventArgs e)
         {
-            gameScreen.onGameCardClick(sender, e);
+            gameScreen.OnGameCardClick(sender, e);
         }
 
-        private void tmrGameUpdate_Tick(object sender, EventArgs e)
+        private void GameUpdateTick(object? sender, EventArgs e)
         {
-            Network.GameComms.SendMessage(new MsgClientRequest()
-            {
-                GameID = game_id,
-                Request = MsgClientRequest.RequestType.GameStatus
-            });
+            Network.GameComms.SendMessage(new MsgClientRequest(MsgClientRequest.RequestType.GameStatus, GameID));
         }
 
         public void UpdateGame(MsgGameStatus status)
         {
             // Check that the ID values
-            if (status.GameID != game_id) return;
+            if (status.GameID != GameID) return;
 
             // Update the status window
             gameScreen.UpdateFromStatus(status);
@@ -58,19 +54,19 @@ namespace CardClient
             }
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExitMenuItemPressed(object sender, EventArgs e)
         {
             Close();
         }
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        private void AboutMenuItemPressed(object sender, EventArgs e)
         {
             (new AboutForm()).ShowDialog(this);
         }
 
-        private void refreshToolStripMenuItem_Click(object sender, EventArgs e)
+        private void RefreshMenuItemPressed(object sender, EventArgs e)
         {
-            tmrGameUpdate_Tick(null, null);
+            GameUpdateTick(null, EventArgs.Empty);
         }
     }
 }

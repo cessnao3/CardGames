@@ -14,13 +14,13 @@ namespace CardGameLibrary.Network
         /// <summary>
         /// Determines whether to print JSON output to the terminal
         /// </summary>
-        private static bool print_output = false;
+        private static bool PrintOutput { get; set; } = false;
 
         /// <summary>
         /// Message type conversion dictionary defines what message types to use for the provided
         /// message ID values in the JSON packets
         /// </summary>
-        readonly static Dictionary<MessageTypeID, Type> type_convert_dict = new Dictionary<MessageTypeID, Type>()
+        static IReadOnlyDictionary<MessageTypeID, Type> TypeConverterDict { get; } = new Dictionary<MessageTypeID, Type>()
         {
             { MessageTypeID.ClientRequest, typeof(MsgClientRequest) },
             { MessageTypeID.GameList, typeof(MsgGameList) },
@@ -38,7 +38,7 @@ namespace CardGameLibrary.Network
         /// <param name="enabled">If true, console messages will be output over the consoel</param>
         static public void SetOutputPrinting(bool enabled)
         {
-            print_output = enabled;
+            PrintOutput = enabled;
         }
 
         /// <summary>
@@ -50,12 +50,12 @@ namespace CardGameLibrary.Network
         {
             // Serialize the message
             string s = JsonSerializer.Serialize(msg, msg.GetType());
-            if (print_output) Console.WriteLine("Sending " + s);
+            if (PrintOutput) Console.WriteLine("Sending " + s);
 
             // Convert the message to bytes, write, and flush the stream
             byte[] bytes = Encoding.ASCII.GetBytes(s);
-            client.stream.Write(bytes, 0, bytes.Length);
-            client.stream.Flush();
+            client.NetworkStream.Write(bytes, 0, bytes.Length);
+            client.NetworkStream.Flush();
         }
 
         /// <summary>
@@ -63,20 +63,20 @@ namespace CardGameLibrary.Network
         /// </summary>
         /// <param name="client">The client to read the message from</param>
         /// <returns>A message if found; otherwise null</returns>
-        static public MsgBase ReadMessage(ClientStruct client)
+        static public MsgBase? ReadMessage(ClientStruct client)
         {
             // Check if the client has bytes availble to read
             // If not, return null
-            if (client.client.Available > 0)
+            if (client.Client.Available > 0)
             {
                 // Read the string
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
 
                 char c = '\0';
                 int colon_count = 0;
                 while ((c != '}' || colon_count > 0) && sb.Length < 10240)
                 {
-                    c = (char)client.stream.ReadByte();
+                    c = (char)client.NetworkStream.ReadByte();
                     sb.Append(c);
 
                     if (c == '{') colon_count += 1;
@@ -86,7 +86,7 @@ namespace CardGameLibrary.Network
                 string s = sb.ToString();
 
                 // Print the string output
-                if (print_output) Console.WriteLine("Receiving " + s);
+                if (PrintOutput) Console.WriteLine("Receiving " + s);
 
                 // Extract the message type to use in parsing
                 MessageTypeID msg_type = MessageTypeID.Invalid;
@@ -104,26 +104,26 @@ namespace CardGameLibrary.Network
                 }
 
                 // Define the message item
-                MsgBase msg_item;
+                MsgBase? msg;
 
-                if (type_convert_dict.ContainsKey(msg_type))
+                if (TypeConverterDict.ContainsKey(msg_type))
                 {
-                    msg_item = (MsgBase)JsonSerializer.Deserialize(
+                    msg = (MsgBase?)JsonSerializer.Deserialize(
                         s,
-                        type_convert_dict[msg_type]);
+                        TypeConverterDict[msg_type]);
 
-                    if (msg_item != null && !msg_item.CheckMessage())
+                    if (msg != null && !msg.CheckMessage())
                     {
-                        msg_item = null;
+                        msg = null;
                     }
                 }
                 else
                 {
-                    msg_item = null;
+                    msg = null;
                 }
 
                 // Return the parsed message, or null if all failed
-                return msg_item;
+                return msg;
             }
             // Return null if no bytes available to read
             else

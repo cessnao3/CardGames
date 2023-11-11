@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace CardGameLibrary.Cards
 {
@@ -12,27 +13,24 @@ namespace CardGameLibrary.Cards
         /// <summary>
         /// Defines the cards present in the player hand
         /// </summary>
-        public List<Card> cards { get; set; }
+        [JsonInclude]
+        public List<Card> Cards { get; set; }
 
         /// <summary>
         /// Initializes an empty player hand
         /// </summary>
         public Hand()
         {
-            cards = new List<Card>();
+            Cards = new List<Card>();
         }
 
         /// <summary>
         /// Sorts the cards based on the default card comparison
         /// </summary>
         /// <param name="comparison">The comparison function to use in sorting the cards</param>
-        public void Sort(Comparison<Card> comparison=null)
+        public void Sort(Comparison<Card>? comparison = null)
         {
-            if (comparison == null)
-            {
-                comparison = Card.DefaultComparison;
-            }
-            cards.Sort(comparison);
+            Cards.Sort(comparison ?? Card.DefaultComparison);
         }
 
         /// <summary>
@@ -41,8 +39,8 @@ namespace CardGameLibrary.Cards
         /// <param name="c">The card to add to the hand</param>
         public void AddCard(Card c)
         {
-            if (c == null) throw new ArgumentNullException("Card may not be null");
-            cards.Add(c);
+            if (c == null) throw new ArgumentNullException("Card may not be null", nameof(c));
+            Cards.Add(c);
         }
 
         /// <summary>
@@ -51,9 +49,9 @@ namespace CardGameLibrary.Cards
         /// <param name="c">The card to play/remove</param>
         public void PlayCard(Card c)
         {
-            if (!cards.Remove(c))
+            if (!Cards.Remove(c))
             {
-                throw new ArgumentException("Cannot play a card that is not in the hand");
+                throw new ArgumentException("Cannot play a card that is not in the hand", nameof(c));
             }
         }
 
@@ -64,7 +62,7 @@ namespace CardGameLibrary.Cards
         /// <returns>True if the player has a card of the given suit</returns>
         public bool HasCardOfSuit(Card.Suit suit)
         {
-            return HasCardWith(x => x.suit == suit);
+            return HasCardWith(x => x.CardSuit == suit);
         }
 
         /// <summary>
@@ -74,7 +72,7 @@ namespace CardGameLibrary.Cards
         /// <returns>True if any of the provided cards return true</returns>
         public bool HasCardWith(Predicate<Card> predicate)
         {
-            foreach (Card c in cards)
+            foreach (Card c in Cards)
             {
                 if (predicate(c))
                 {
@@ -92,7 +90,7 @@ namespace CardGameLibrary.Cards
         /// <returns>True if the player has the requested card</returns>
         public bool HasCard(Card card)
         {
-            foreach (Card c in cards)
+            foreach (Card c in Cards)
             {
                 if (c.Equals(card))
                 {
@@ -108,7 +106,7 @@ namespace CardGameLibrary.Cards
         /// </summary>
         public void Clear()
         {
-            cards.Clear();
+            Cards.Clear();
         }
     }
 }
